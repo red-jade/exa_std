@@ -142,8 +142,9 @@ defmodule Exa.Std.RleInt do
 
   defp encode([], _dbit, _dmax, irle), do: Enum.reverse(irle)
 
-  # calculate the length of a delta run
-  @spec calc([integer()], integer(), integer(), pos_integer(), E.count1()) :: E.count1()
+  # calculate the min value and length of a delta run
+  @spec calc([integer(), ...], integer(), integer(), pos_integer(), E.count1()) ::
+          {integer(), E.count1()}
 
   defp calc([i | is], imin, imax, dmax, n) when is_in_range(imin, i, imax) do
     # continue run with existing imin and imax
@@ -317,7 +318,7 @@ defmodule Exa.Std.RleInt do
   @spec maximum(irle()) :: integer()
   def maximum([i | irle]), do: do_max(irle, i)
 
-  @spec do_max(irun(), integer()) :: integer()
+  @spec do_max(irle(), integer()) :: integer()
 
   defp do_max([{imin, deltas} | irle], max) do
     {_, dbit, dels} = dsize(deltas)
@@ -341,7 +342,7 @@ defmodule Exa.Std.RleInt do
   @spec minimum(irle()) :: integer()
   def minimum([i | irle]), do: do_min(irle, i)
 
-  @spec do_min(irun(), integer()) :: integer()
+  @spec do_min(irle(), integer()) :: integer()
   defp do_min([{imin, _} | irle], min), do: do_min(irle, min(min, imin))
   defp do_min([i | irle], min) when is_integer(i), do: do_min(irle, min(min, i))
   defp do_min([], min), do: min
@@ -379,7 +380,7 @@ defmodule Exa.Std.RleInt do
 
   # for auto RLE construction, calculate min/max in single pass
   @spec do_map(irle(), E.mapper(integer(), integer()), [integer()], integer(), integer()) ::
-          [integer()]
+          {[integer()], integer(), integer()}
 
   defp do_map([a | _] = ia, f, is, imin, imax) do
     i = f.(a)
@@ -456,7 +457,7 @@ defmodule Exa.Std.RleInt do
           integer(),
           integer()
         ) ::
-          [integer()]
+          {[integer()], integer(), integer()}
 
   defp do_zip([a | _] = ia, [b | _] = ib, f, is, imin, imax) do
     i = f.(a, b)
