@@ -2,11 +2,11 @@ defmodule Exa.Std.Mol do
   @moduledoc """
   Map of Lists (MoL).
 
-  There is a policy or removal-on-empty, 
+  There is a policy of removal-on-empty, 
   and fetch default of empty, to keep the map sparse 
   in the presence of many empty list values.
 
-  An MoL is a Map, so all Map and Exa.Map functions can be applied.
+  An MoL is a Map, so all Map and `Exa.Map` functions can be applied.
 
   The general policy is not to include a function in MoL 
   if it is available in Map or Exa.Map (no delegate wrappers).
@@ -17,10 +17,6 @@ defmodule Exa.Std.Mol do
      and for symmetry with `get`
   - `flush` means delete, but returning the deleted value
   """
-
-  # Note it might appear that some functions using get & set
-  # could be improved with Map.update
-  # but beware defaults and removal-on-empty
 
   alias Exa.Types, as: E
 

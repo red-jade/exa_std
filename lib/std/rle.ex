@@ -19,6 +19,7 @@ defmodule Exa.Std.Rle do
   such as, `Kernel.tl` (use `Rle.next`) 
   and `Kernel.length` (use `Rle.size`).
   """
+  require Logger
   import Exa.Types
   alias Exa.Types, as: E
 
@@ -99,7 +100,12 @@ defmodule Exa.Std.Rle do
   defp do_at([x | _], 0), do: x
   defp do_at([{:rle, _, k} | rle], n), do: do_at(rle, n - k)
   defp do_at([_ | rle], n), do: do_at(rle, n - 1)
-  defp do_at([], _), do: raise(ArgumentError, message: "Index out of bounds")
+
+  defp do_at([], _) do
+    msg = "Index out of range"
+    Logger.error(msg)
+    raise ArgumentError, message: msg
+  end
 
   @doc "Sum the RLE, assuming all elements are numbers."
   @spec sum(rle()) :: number()

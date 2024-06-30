@@ -40,6 +40,7 @@ defmodule Exa.Std.RleInt do
   - single-bit boolean lists: consider raw bitstring 
     with `Exa.Binary` utils, or perhaps `Exa.Image.Bitmap`.
   """
+  require Logger
   import Bitwise
 
   import Exa.Types
@@ -125,7 +126,7 @@ defmodule Exa.Std.RleInt do
 
   def new([i | tail], nbit, _) when is_integer(i) and is_count1(nbit) do
     dbit = Exa.Math.clamp(@min_dbit, nbit, @max_dbit)
-    if dbit != nbit, do: IO.puts("Warning [IntRle]: clamping delta bit size to #{dbit}")
+    if dbit != nbit, do: Logger.warning("Clamping delta bit size to #{dbit}")
     [i | encode(tail, dbit, 1 <<< dbit, [])]
   end
 
@@ -220,7 +221,11 @@ defmodule Exa.Std.RleInt do
     end
   end
 
-  def at([], _), do: raise(ArgumentError, message: "Index out of range")
+  def at([], _) do
+    msg = "Index out of range"
+    Logger.error(msg)
+    raise ArgumentError, message: msg
+  end
 
   @doc """
   Get the compression of the RLE in memory,

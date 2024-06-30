@@ -55,9 +55,7 @@ defmodule Exa.Std.Histo2D do
   Each increment adds one count to the histogram bin.
   """
   @spec new([H.bin2d()]) :: H.histo2d()
-  def new(bins) when is_list(bins) do
-    Enum.reduce(bins, new(), &inc(&2, &1))
-  end
+  def new(bins) when is_list(bins), do: Enum.reduce(bins, new(), &inc(&2, &1))
 
   @doc "Get the count for a bin."
   @spec get(H.histo2d(), H.bin2d()) :: E.count()
@@ -195,9 +193,7 @@ defmodule Exa.Std.Histo2D do
   The sum of all the counts.
   """
   @spec total_count(H.histo2d()) :: E.count()
-  def total_count(histo) when is_histo2d(histo) do
-    histo |> Map.values() |> Enum.sum()
-  end
+  def total_count(histo) when is_histo2d(histo), do: histo |> Map.values() |> Enum.sum()
 
   @doc """
   Convert to a sorted list of counts for each 2D bin.

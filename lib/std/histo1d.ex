@@ -24,6 +24,7 @@ defmodule Exa.Std.Histo1D do
 
   This implementation uses `:erlang.array`.
   """
+  require Logger
 
   import Exa.Types
   alias Exa.Types, as: E
@@ -59,7 +60,9 @@ defmodule Exa.Std.Histo1D do
 
   def new(counts) when is_list(counts) do
     if Enum.any?(counts, fn x -> not (is_integer(x) and x >= 0) end) do
-      raise ArgumentError, message: "Counts must be no-negative integers, found #{counts}"
+      msg = "Counts must be non-negative integers, found #{counts}"
+      Logger.error(msg)
+      raise ArgumentError, message: msg
     end
 
     :array.from_list(counts, 0)
@@ -75,20 +78,24 @@ defmodule Exa.Std.Histo1D do
 
   @doc "Add one count to a bin of the histogram."
   @spec inc(H.histo1d(), H.hvalue()) :: H.histo1d()
-  def inc(histo, i) when is_hval(i) do
-    set(histo, i, get(histo, i) + 1)
-  end
+  def inc(histo, i) when is_hval(i), do: set(histo, i, get(histo, i) + 1)
 
-  @doc "Subtract one count from a bin of the histogram."
+  @doc """
+  Subtract one count from a bin of the histogram.
+
+  Allow decrement of zero count, 
+  and tolerate transient negative values,
+  for race conditions in asynchronus systems. 
+  """
   @spec dec(H.histo1d(), H.hvalue()) :: H.histo1d()
   def dec(histo, i) when is_hval(i) do
-    set(histo, i, get(histo, i) - 1)
-    # case get(histo, i) do
-    #   # allow negative value due to race conditions?
-    #   # 0 -> raise RuntimeError, 
-    #   #        message: "Histogram: cannot decrement 0 count at index #{i}"
-    #   n -> set(histo, i, n - 1)
-    # end
+    count = get(histo, i)
+
+    if count <= 0 do
+      Logger.info("Negative count for value #{}i}")
+    end
+
+    set(histo, i, count - 1)
   end
 
   @doc """
@@ -100,9 +107,7 @@ defmodule Exa.Std.Histo1D do
   Increment the count for the new higher value.
   """
   @spec add(H.histo1d(), H.hvalue()) :: H.histo1d()
-  def add(histo, i) when is_hval(i) do
-    histo |> dec(i) |> inc(i + 1)
-  end
+  def add(histo, i) when is_hval(i), do: histo |> dec(i) |> inc(i + 1)
 
   @doc """
   Decrease a value by 1. This is a value not a count.
@@ -113,18 +118,14 @@ defmodule Exa.Std.Histo1D do
   Increment the count for the new lower value.
   """
   @spec sub(H.histo1d(), H.hvalue()) :: H.histo1d()
-  def sub(histo, i) when is_hval(i) and i > 0 do
-    histo |> dec(i) |> inc(i - 1)
-  end
+  def sub(histo, i) when is_hval(i) and i > 0, do: histo |> dec(i) |> inc(i - 1)
 
   @doc """
   Size of the histogram from 0 up to the 
   last index value with a non-zero count.
   """
   @spec size(H.histo1d()) :: E.count()
-  def size(histo) do
-    :array.sparse_size(histo)
-  end
+  def size(histo), do: :array.sparse_size(histo)
 
   @doc """
   The number of bins in the histogram with a non-zero count.
@@ -172,26 +173,20 @@ defmodule Exa.Std.Histo1D do
   The sum of all the counts.
   """
   @spec total_count(H.histo1d()) :: E.count()
-  def total_count(histo) do
-    :array.sparse_foldl(fn _i, n, sum -> sum + n end, 0, histo)
-  end
+  def total_count(histo), do: :array.sparse_foldl(fn _i, n, sum -> sum + n end, 0, histo)
 
   @doc """
   The total value of all the data represented in the histogram.
   Sum the product of array index value and count.
   """
   @spec total_value(H.histo1d()) :: E.count()
-  def total_value(histo) do
-    :array.sparse_foldl(fn i, n, sum -> sum + i * n end, 0, histo)
-  end
+  def total_value(histo), do: :array.sparse_foldl(fn i, n, sum -> sum + i * n end, 0, histo)
 
   @doc """
   Mean of the values.
   """
   @spec mean(H.histo1d()) :: float()
-  def mean(histo) do
-    total_value(histo) / total_count(histo)
-  end
+  def mean(histo), do: total_value(histo) / total_count(histo)
 
   @doc """
   Median of the values.
@@ -201,9 +196,7 @@ defmodule Exa.Std.Histo1D do
   So the result is a fractional value.
   """
   @spec median(H.histo1d()) :: float()
-  def median(histo) do
-    cumulative(histo, total_count(histo) / 2, 0, 0)
-  end
+  def median(histo), do: cumulative(histo, total_count(histo) / 2, 0, 0)
 
   # progressive scan looking for total above 50% level
   @spec cumulative(H.histo1d(), float(), H.hvalue(), E.count()) :: float()
@@ -225,9 +218,7 @@ defmodule Exa.Std.Histo1D do
   The last entry is the last non-zero count value.
   """
   @spec to_list(H.histo1d()) :: [E.count()]
-  def to_list(histo) do
-    histo |> :array.resize() |> :array.to_list()
-  end
+  def to_list(histo), do: histo |> :array.resize() |> :array.to_list()
 
   @doc """
   Convert to a sparse list of pairs of non-zero counts.

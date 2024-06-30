@@ -20,6 +20,7 @@ defmodule Exa.Std.CharStream do
   and only the `\n` appears in the current position in the stream.
 
   """
+  require Logger
   use Exa.Constants
 
   import Exa.Types
@@ -180,10 +181,19 @@ defmodule Exa.Std.CharStream do
 
   defp toks(cstr, skip, incl, excl, toks) do
     case token(cstr, skip, incl, excl) do
-      {{"", _}, {:eos, _, _}} -> Enum.reverse(toks)
-      {tok, {:eos, _, _}} -> Enum.reverse([tok | toks])
-      {tok, new_cstr} when new_cstr != cstr -> toks(new_cstr, skip, incl, excl, [tok | toks])
-      {_tok, {c, _, addr}} -> raise ArgumentError, message: err(addr, c)
+      {{"", _}, {:eos, _, _}} ->
+        Enum.reverse(toks)
+
+      {tok, {:eos, _, _}} ->
+        Enum.reverse([tok | toks])
+
+      {tok, new_cstr} when new_cstr != cstr ->
+        toks(new_cstr, skip, incl, excl, [tok | toks])
+
+      {_tok, {c, _, {line, col, _}}} ->
+        msg = "[#{line}, #{col}] Illegal character '#{<<c::utf8>>}'"
+        Logger.error(msg)
+        raise ArgumentError, message: msg
     end
   end
 
@@ -198,10 +208,4 @@ defmodule Exa.Std.CharStream do
   # test for common internal connectives
   @spec is_connect(char()) :: bool()
   defp is_connect(c), do: c in ~c"'-"
-
-  # error string for illegal char
-  @spec err(caddr(), char()) :: String.t()
-  defp err({line, col, _ichar}, c) do
-    "[#{line}, #{col}] Illegal character '#{<<c::utf8>>}'"
-  end
 end

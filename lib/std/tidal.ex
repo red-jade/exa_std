@@ -16,14 +16,14 @@ defmodule Exa.Std.Tidal do
     The highest currently observed value.
     Either equal to the LWM, or greater than LWM+1.
 
-  - Between the LWM and HWM, 
-    there is a partial set of observations, with missing values.
+  - Between the LWM and HWM:
+    There is a partial set of observations, with missing values.
     In particular, LWM+1 is the lowest value that has not been observed.
 
   When a new value is observed, 
   it will satisfy one or more of these conditions:
   - above the HWM, so increase the HWM;
-  - between LWM+1 and HWM, so add to the set
+  - between LWM+1 and HWM, so add to the partial set
   - LWM+1 extends the contiguous observed range,
     increases the LWM, and possibly triggers consuming an 
     ascending sequence from the set, perhaps up to the HWM

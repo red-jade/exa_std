@@ -48,9 +48,7 @@ defmodule Exa.Std.Histo3D do
   Each increment adds one count to the histogram bin.
   """
   @spec new([H.bin3d()]) :: H.histo3d()
-  def new(bins) when is_list(bins) do
-    Enum.reduce(bins, new(), &inc(&2, &1))
-  end
+  def new(bins) when is_list(bins), do: Enum.reduce(bins, new(), &inc(&2, &1))
 
   @doc "Get the count for a bin."
   @spec get(H.histo3d(), H.bin3d()) :: E.count()
@@ -126,9 +124,7 @@ defmodule Exa.Std.Histo3D do
   The sum of all the counts.
   """
   @spec total_count(H.histo3d()) :: E.count()
-  def total_count(histo) when is_histo3d(histo) do
-    histo |> Map.values() |> Enum.sum()
-  end
+  def total_count(histo) when is_histo3d(histo), do: histo |> Map.values() |> Enum.sum()
 
   @doc """
   Convert to a sorted list of counts for each 3D bin.
