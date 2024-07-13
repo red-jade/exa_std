@@ -5,7 +5,7 @@ defmodule Exa.Std.MixProject do
     [
       app: :exa_std,
       name: "Exa Std",
-      version: "0.1.2",
+      version: "0.1.4",
       elixir: "~> 1.15",
       erlc_options: [:verbose, :report_errors, :report_warnings, :export_all],
       start_permanent: Mix.env() == :prod,
@@ -35,8 +35,8 @@ defmodule Exa.Std.MixProject do
     [
       # runtime code dependencies ----------
 
-      {:exa, git: "https://github.com/red-jade/exa_core.git", tag: "v0.1.2"},
-      {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.1.2"},
+      {:exa, git: "https://github.com/red-jade/exa_core.git", tag: "v0.1.4"},
+      {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.1.4"},
 
       # building, documenting, testing ----------
 
