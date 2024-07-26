@@ -21,6 +21,8 @@ erl_crash.dump
 # Also ignore archive artifacts and IDE workspaces
 *.ez
 *.sublime-workspace
+*.excalidraw
+/assets/*.svg
 
 # Ignore package tarball (built via "mix hex.build").
 exa-*.tar
@@ -28,7 +30,6 @@ exa-*.tar
 # Temporary files for e.g. tests
 /tmp
 /test/output
-/test/bench/json_reader.benchee
 
 # files moved aside temporarily
 *.NOT

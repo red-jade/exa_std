@@ -16,9 +16,10 @@ Module path: `Exa.Std`
 - Run Length Encoding (RLE):
   - general for lists of any type
   - integers, using lossless binary delta-compression
-- Map of Lists (MoL)
 - Character Stream: incremental char from a binary String with line/column address
-- Tidal: managing out-of-order streaming sequence
+- Tidal: managing out-of-order streaming sequence (integer IDs)
+- Map of Lists (MoL)
+- Yet Another Zip List (yazl): list with local cursor
 
 ### License
 
