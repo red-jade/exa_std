@@ -136,43 +136,45 @@ defmodule Exa.Std.YazlTest do
     assert z == move(z, :ldir)
   end
 
-  test "moveto" do
+  test "move_to" do
     empty = new()
     assert :endr == pos(empty)
-    assert empty == moveto(empty, :endl)
-    assert empty == moveto(empty, :endr)
-    assert empty == moveto(empty, 99)
+    assert empty == move_to(empty, :endl)
+    assert empty == move_to(empty, :endr)
+    assert empty == move_to(empty, 99)
 
     x = [1, 2, 3, 4, 5]
     z = new(x)
     assert {[], x} == z
 
-    assert z == moveto(z, :endl)
-    assert z == moveto(z, 0)
+    assert z == move_to(z, :endl)
+    assert z == move_to(z, 0)
 
-    assert {[1], [2, 3, 4, 5]} == moveto(z, 1)
-    assert {[2, 1], [3, 4, 5]} == moveto(z, 2)
-    assert {[3, 2, 1], [4, 5]} == moveto(z, 3)
-    assert {[4, 3, 2, 1], [5]} == moveto(z, 4)
+    assert {[1], [2, 3, 4, 5]} == move_to(z, 1)
+    assert {[2, 1], [3, 4, 5]} == move_to(z, 2)
+    assert {[3, 2, 1], [4, 5]} == move_to(z, 3)
+    assert {[4, 3, 2, 1], [5]} == move_to(z, 4)
 
-    assert {[5, 4, 3, 2, 1], []} == moveto(z, 5)
-    assert {[5, 4, 3, 2, 1], []} == moveto(z, 99)
-    assert {[5, 4, 3, 2, 1], []} == moveto(z, :endr)
+    assert {[5, 4, 3, 2, 1], []} == move_to(z, 5)
+    assert {[5, 4, 3, 2, 1], []} == move_to(z, 99)
+    assert {[5, 4, 3, 2, 1], []} == move_to(z, :endr)
 
     z = new(x, 2)
     assert {[2, 1], [3, 4, 5]} == z
 
-    assert {[], x} == moveto(z, :endl)
-    assert {[], x} == moveto(z, 0)
+    assert {[], x} == move_to(z, :endl)
+    assert {[], x} == move_to(z, 0)
 
-    assert {[1], [2, 3, 4, 5]} == moveto(z, 1)
-    assert {[2, 1], [3, 4, 5]} == moveto(z, 2)
-    assert {[3, 2, 1], [4, 5]} == moveto(z, 3)
-    assert {[4, 3, 2, 1], [5]} == moveto(z, 4)
+    assert {[1], [2, 3, 4, 5]} == move_to(z, 1)
+    assert {[2, 1], [3, 4, 5]} == move_to(z, 2)
+    assert {[3, 2, 1], [4, 5]} == move_to(z, 3)
+    assert {[4, 3, 2, 1], [5]} == move_to(z, 4)
 
-    assert {[5, 4, 3, 2, 1], []} == moveto(z, 5)
-    assert {[5, 4, 3, 2, 1], []} == moveto(z, 99)
-    assert {[5, 4, 3, 2, 1], []} == moveto(z, :endr)
+    assert {[5, 4, 3, 2, 1], []} == move_to(z, 5)
+    assert {[5, 4, 3, 2, 1], []} == move_to(z, 99)
+    assert {[5, 4, 3, 2, 1], []} == move_to(z, :endr)
+
+    # TODO - move_until
   end
 
   test "find" do
@@ -225,5 +227,105 @@ defmodule Exa.Std.YazlTest do
     assert {[2, 1], [3, 3, 3]} == finds(z, [3, 3])
     assert {[2, 1], [3, 3, 3]} == finds(z, [3, 3, 3])
     assert :endr == finds(z, [3, 3, 3, 3])
+  end
+
+  test "set" do
+    x = [1, 2, 3, 4, 5]
+    z = new(x, 2)
+    assert {[2, 1], [3, 4, 5]} == z
+
+    assert {[2, 1], [9, 4, 5]} == set(z, 9, :rdir)
+    assert {[9, 1], [3, 4, 5]} == set(z, 9, :ldir)
+
+    z = move_to(z, :endr)
+    assert {[5, 4, 3, 2, 1], []} == z
+    assert :endr == set(z, 9, :rdir)
+
+    z = move_to(z, :endl)
+    assert {[], [1, 2, 3, 4, 5]} == z
+    assert :endl == set(z, 9, :ldir)
+  end
+
+  test "sets" do
+    x = [1, 2, 3, 4, 5]
+    z = new(x, 2)
+    assert {[2, 1], [3, 4, 5]} == z
+
+    assert {[2, 1], [9, 4, 5]} == sets(z, [9], :rdir)
+    assert {[2, 1], [9, 8, 5]} == sets(z, [9, 8], :rdir)
+    assert {[2, 1], [9, 8, 7]} == sets(z, [9, 8, 7], :rdir)
+    assert :endr == sets(z, [9, 8, 7, 6], :rdir)
+
+    assert {[9, 1], [3, 4, 5]} == sets(z, [9], :ldir)
+    assert {[8, 9], [3, 4, 5]} == sets(z, [9, 8], :ldir)
+    assert :endl == sets(z, [9, 8, 7], :ldir)
+  end
+
+  test "insert" do
+    x = [1, 2, 3, 4, 5]
+    z = new(x, 2)
+    assert {[2, 1], [3, 4, 5]} == z
+
+    assert {[2, 1], [9, 3, 4, 5]} == insert(z, 9, :rdir)
+    assert {[9, 2, 1], [3, 4, 5]} == insert(z, 9, :ldir)
+
+    assert {[2, 1], [3, 4, 5, 9]} == insert(z, 9, :endr)
+    y = move_to(z, :endr)
+    assert {[5, 4, 3, 2, 1], []} == y
+    assert {[5, 4, 3, 2, 1], [9]} == insert(y, 9, :rdir)
+    assert {[9, 5, 4, 3, 2, 1], []} == insert(y, 9, :ldir)
+    assert {[5, 4, 3, 2, 1, 9], []} == insert(y, 9, :endl)
+
+    assert {[2, 1, 9], [3, 4, 5]} == insert(z, 9, :endl)
+    x = move_to(z, :endl)
+    assert {[], [1, 2, 3, 4, 5]} == x
+    assert {[9], [1, 2, 3, 4, 5]} == insert(x, 9, :ldir)
+    assert {[], [9, 1, 2, 3, 4, 5]} == insert(x, 9, :rdir)
+    assert {[], [1, 2, 3, 4, 5, 9]} == insert(x, 9, :endr)
+  end
+
+  test "inserts" do
+    x = [1, 2, 3, 4, 5]
+    z = new(x, 2)
+    assert {[2, 1], [3, 4, 5]} == z
+
+    assert {[2, 1], [8, 9, 3, 4, 5]} == inserts(z, [8, 9], :rdir)
+    assert {[9, 8, 2, 1], [3, 4, 5]} == inserts(z, [8, 9], :ldir)
+
+    assert {[2, 1], [3, 4, 5, 8, 9]} == inserts(z, [8, 9], :endr)
+    y = move_to(z, :endr)
+    assert {[5, 4, 3, 2, 1], []} == y
+    assert {[5, 4, 3, 2, 1], [8, 9]} == inserts(y, [8, 9], :rdir)
+    assert {[9, 8, 5, 4, 3, 2, 1], []} == inserts(y, [8, 9], :ldir)
+    assert {[5, 4, 3, 2, 1, 9, 8], []} == inserts(y, [8, 9], :endl)
+
+    assert {[2, 1, 9, 8], [3, 4, 5]} == inserts(z, [8, 9], :endl)
+    x = move_to(z, :endl)
+    assert {[], [1, 2, 3, 4, 5]} == x
+    assert {[9, 8], [1, 2, 3, 4, 5]} == inserts(x, [8, 9], :ldir)
+    assert {[], [8, 9, 1, 2, 3, 4, 5]} == inserts(x, [8, 9], :rdir)
+    assert {[], [1, 2, 3, 4, 5, 8, 9]} == inserts(x, [8, 9], :endr)
+  end
+
+  test "delete" do
+    x = [1, 2, 3, 4, 5]
+    z = new(x, 2)
+    assert {[2, 1], [3, 4, 5]} == z
+
+    y = delete(z, :rdir)
+    assert {[2, 1], [4, 5]} == y
+    y = delete(y, :rdir)
+    assert {[2, 1], [5]} == y
+    y = delete(y, :rdir)
+    assert {[2, 1], []} == y
+    y = delete(y, :rdir)
+    assert :endr == y
+
+    y = delete(z, :ldir)
+    assert {[1], [3, 4, 5]} == y
+    y = delete(y, :ldir)
+    assert {[], [3, 4, 5]} == y
+    y = delete(y, :ldir)
+    assert :endl == y
   end
 end

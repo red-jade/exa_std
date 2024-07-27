@@ -25,17 +25,19 @@ defmodule Exa.Std.Yazl do
   like western writing, with the excuse that this bias is already
   present in Erlang with the names _foldl_, _foldr_.
 
-  The position of the current element is either a 0-based non-negative integer,
-  or an end marker: `:endl`, for the beginning, or `:endr` for the end.
   The current value is chosen as left `:ldir` 
   or right `:rdir` (default) of the current focus.
+
+  The position of the current element to the left `:ldir` or right `rdir` 
+  is either a 0-based non-negative integer,
+  or an end marker: `:endl`, for the beginning, or `:endr` for the end.
 
   ![yazl](./assets/yazl.png)
 
   There is no current value for:
   - any direction on empty lists
-  - `:rdir` with the focus after the last element
-  - `:ldir` with the focus before the first element
+  - `:rdir` when the focus is after the last element
+  - `:ldir` when the focus is before the first element
 
   Functions on single values and lists of values are not overloaded,
   they are given distinct names (_e.g._`insert`/`inserts`),
@@ -46,53 +48,53 @@ defmodule Exa.Std.Yazl do
 
   ### Create, Import, Export 
 
-  Create yazls from lists using `new`, `from_list` and `from_lists`.
-  Recover the underlying list with `to_list` or `to_lists`.
+  Create yazls from lists using `new/0`, `new/1`, `new/2`, 
+  `from_list/1` and `from_lists/2`.
+  Recover the underlying list with `to_list/1` or `to_lists/1`.
 
   ### Query 
 
-  Test if a term appears to be a yazl with the `is_yazl` guard.
-  Test if it is empty with `is_empty`.
-  Get the total length of the underlying list using `size`.
+  Test if a term appears to be a yazl with the `is_yazl/1` guard.
+  Test if it is empty with `is_empty/1`.
+  Get the total length of the underlying list using `size/1`.
   Find the current focus location using `position`,
   which may return a 0-based integer index, or an ending marker.
-  Read the value(s) at the current focus position using `get` or `gets`.
+  Read the value(s) at the current focus position using `get/2` or `gets/3`.
 
   ### Move 
 
   Movement functions change the focus position,
   but do not change the content of the list.
 
-  The `move` function changes focus to the next or previous elements.
+  The `move/2` function changes focus to the next or previous elements.
 
-  The `moves` function jumps multiple steps relative to the current focus.
+  The `moves/3` function jumps multiple steps relative to the current focus.
 
-  The `moveto` function jump to absolute positions based on
+  The `move_to/2` function jump to absolute positions based on
   a specific index, or the beginning or end of the list.
 
   Client code can implement cyclic behaviour by using
-  a combination of `move` and `moveto` functions.
+  a combination of `move/2` and `move_to/2` functions.
 
   ### Search
 
-  Move the focus by searching with `find`, `finds`,
-  `moveuntil` and `movewhile`.
-  The `find` function will search for the next or previous
-  occurrence of a value. The `finds` function searches for the
+  Move the focus by searching with `find/3`, `finds/3`, `move_until/3`.
+  The `find/3` function will search for the next or previous
+  occurrence of a value. The `finds/3` function searches for the
   next or previous occurrence of a sequence of values.
-  The `moveuntil` (`movewhile`) functions search until a
-  boolean predicate function of the current value becomes true (false).
+  The `move_until/2` functions search until a
+  boolean predicate function of the current value becomes true.
 
   ### Update 
 
-  Write the value at the current focus position using `set`.
+  Write the value(s) at the current focus position using `set/3` and `sets/3`.
 
   Add new values on either side of the current focus,
   or at the head or tail of the underlying list, using
-  `insert` and `inserts`.
+  `insert/3` and `inserts/3`.
 
-  Delete the element at the current focus position using `delete`.
-  Delete from the focus to one of the ends using the `truncate`.
+  Delete the element at the current focus position using `delete/2`.
+  Delete from the focus to one of the ends using the `truncate/2`.
 
   Reverse the whole list while keeping the same focus
   using `reverse` - note this is constant time O(1).
@@ -105,19 +107,18 @@ defmodule Exa.Std.Yazl do
 
   The implementation is efficient constant time, O(1):
   for local operations at the focus: <br>
-  `new/0, new/1, move, get, set, insert,
-   delete, reverse, truncate`.
+  `new`, `move`, `get`, `set`, `insert`, `inserts`,
+   `delete`, `reverse`, `truncate`.
 
-  Incremental operations will incur a cost proportional
+  Incremental operations will incur an O(m) cost proportional
   to the distance from the focus to the target position:<br>
-  `from_list/2, from_lists, gets, sets, moves, moveto, moveuntil,
-  find, finds, inserts`.
+  `from_list`, `from_lists`, `gets`, `sets`, `moves`, `move_to`,
+  `move_until`, `find`, `finds`, `inserts`.
 
   Global operations will incur a cost proportional to the
   length of the underlying list O(n): <br>
-  `to_list, size, position`.
+  `to_list`, `size`, `position`.
   """
-  require Logger
   import Exa.Types
   alias Exa.Types, as: E
 
@@ -410,17 +411,17 @@ defmodule Exa.Std.Yazl do
   def moves(z, i, dir) when i < 0, do: moves(z, -i, opposite(dir))
 
   def moves({l, r}, i, :rdir) when i < length(r) do
-    {hr, tr} = Enum.split(r, i)
-    {Enum.reverse(hr, l), tr}
+    {rh, rt} = Enum.split(r, i)
+    {Enum.reverse(rh, l), rt}
   end
 
   def moves({l, r}, i, :ldir) when i < length(l) do
-    {hl, tl} = Enum.split(l, i)
-    {tl, Enum.reverse(hl, r)}
+    {lh, lt} = Enum.split(l, i)
+    {lt, Enum.reverse(lh, r)}
   end
 
-  def moves(z, _, :rdir), do: moveto(z, :endr)
-  def moves(z, _, :ldir), do: moveto(z, :endl)
+  def moves(z, _, :rdir), do: move_to(z, :endr)
+  def moves(z, _, :ldir), do: move_to(z, :endl)
 
   @doc """
   Move to an absolute position, either:
@@ -435,19 +436,19 @@ defmodule Exa.Std.Yazl do
 
   Equivalent to: `z |> to_list() |> new(pos)`
   """
-  @spec moveto(yazl(a), position()) :: yazl(a) when a: var
+  @spec move_to(yazl(a), position()) :: yazl(a) when a: var
 
   # are these faster than the naive implementation?
   # z |> to_list() |> new(pos)
 
-  def moveto({[], []} = z, _), do: z
-  def moveto({_, []} = z, :endr), do: z
-  def moveto({[], _} = z, :endl), do: z
+  def move_to({[], []} = z, _), do: z
+  def move_to({_, []} = z, :endr), do: z
+  def move_to({[], _} = z, :endl), do: z
 
-  def moveto({l, r}, :endr), do: {Enum.reverse(r, l), []}
-  def moveto({l, r}, :endl), do: {[], Enum.reverse(l, r)}
+  def move_to({l, r}, :endr), do: {Enum.reverse(r, l), []}
+  def move_to({l, r}, :endl), do: {[], Enum.reverse(l, r)}
 
-  def moveto({_, _} = z, i) when is_integer(i) do
+  def move_to({_, _} = z, i) when is_integer(i) do
     len = size(z)
 
     ir =
@@ -457,10 +458,34 @@ defmodule Exa.Std.Yazl do
       end
 
     cond do
-      i <= 0 -> moveto(z, :endl)
-      i >= len -> moveto(z, :endr)
+      i <= 0 -> move_to(z, :endl)
+      i >= len -> move_to(z, :endr)
       true -> moves(z, i - ir, :rdir)
     end
+  end
+
+  @doc """
+  Search for the first occurrence of a value
+  that satisfies a boolean predicate function.
+
+  If the search is successful, it returns a yazl
+  that focuses before (after) the found element.
+
+  If the search does not find the value,
+  then it returns `:endr` or `:endl`.
+  """
+  @spec move_until(yazl(a), E.predicate?(a), direction()) :: endable(yazl(a)) when a: var
+  def move_until(yazl, pred, dir \\ :rdir)
+
+  def move_until({_, []}, _, :rdir), do: :endr
+  def move_until({[], _}, _, :ldir), do: :endl
+
+  def move_until({_, [rh | _]} = z, pred, :rdir) do
+    if pred.(rh), do: z, else: move_until(move(z, :rdir), pred, :rdir)
+  end
+
+  def move_until({[lh | _], _} = z, pred, :ldir) do
+    if pred.(lh), do: z, else: move_until(move(z, :ldir), pred, :ldir)
   end
 
   # ------
@@ -478,7 +503,7 @@ defmodule Exa.Std.Yazl do
   then it returns `:endr` or `:endl`.
   """
   @spec find(yazl(a), a, direction()) :: endable(yazl(a)) when a: var
-  def find(yazl, target, dir \\ :rdir)
+  def find(yazl, val, dir \\ :rdir)
   def find({_, []}, _, :rdir), do: :endr
   def find({[], _}, _, :ldir), do: :endl
   def find({_, [val | _]} = z, val, :rdir), do: z
@@ -530,4 +555,151 @@ defmodule Exa.Std.Yazl do
       y -> reverse(y)
     end
   end
+
+  # ------
+  # update
+  # ------
+
+  @doc """
+  Set the value of the element to the right or
+  left of the current focus.
+
+  If the operation would overrun the begining or end
+  of the list, return `:endr` or `:endl`.
+
+  This is fast constant time O(1).
+  """
+  @spec set(yazl(a), a, direction()) :: endable(yazl(a)) when a: var
+  def set(yazl, val, dir \\ :rdir)
+  def set({_, []}, _, :rdir), do: :endr
+  def set({[], _}, _, :ldir), do: :endl
+  def set({l, [_ | rt]}, v, :rdir), do: {l, [v | rt]}
+  def set({[_ | lt], r}, v, :ldir), do: {[v | lt], r}
+
+  @doc """
+  Set values of elements to the right or
+  left of the current focus.
+
+  Setting the empty list is a no-op,
+  and returns the original yazl.
+
+  If the operation would overrun the begining or end
+  of the list, return `:endr` or `:endl`.
+
+  Performance is up to O(n+m) for m new values, where m > 1
+  """
+  @spec sets(yazl(a), [a], direction()) :: endable(yazl(a)) when a: var
+  def sets(yazl, vals, dir \\ :rdir)
+
+  def sets(z, [], _), do: z
+
+  def sets(z, [v], dir), do: set(z, v, dir)
+
+  def sets({l, r}, vs, :rdir) do
+    nv = length(vs)
+
+    cond do
+      nv > length(r) -> :endr
+      true -> {l, vs ++ Enum.drop(r, nv)}
+    end
+  end
+
+  def sets({l, r}, vs, :ldir) do
+    nv = length(vs)
+
+    cond do
+      nv > length(l) -> :endl
+      true -> {Enum.reverse(vs, Enum.drop(l, nv)), r}
+    end
+  end
+
+  @doc """
+  Insert a value of the element to the 
+  right or left of the current focus, 
+  or at the beginning or end of the whole list.
+
+  For local insertion at the focus,
+  whether the value is put to the left or right
+  does not affect the final content of the list,
+  just the final position of the focus
+  relative to the new inserted value.
+
+  This is fast constant time O(1).
+  """
+  @spec insert(yazl(a), a, direction() | ending()) :: yazl(a) when a: var
+  def insert(yazl, val, dir \\ :rdir)
+  def insert({l, r}, v, :rdir), do: {l, [v | r]}
+  def insert({l, r}, v, :ldir), do: {[v | l], r}
+  def insert({l, r}, v, :endl), do: {l ++ [v], r}
+  def insert({l, r}, v, :endr), do: {l, r ++ [v]}
+
+  @doc """
+  Insert a sequence of values to the left or right
+  of the current focus, or at the beginning
+  or end of the whole list.
+
+  Whether it is inserted to the left or right
+  does not affect the final content of the list,
+  just the final position of the focus
+  relative to the inserted sequence.
+
+  Inserting an empty sequence does not change the underlying list.
+  """
+  @spec inserts(yazl(a), [a], direction() | ending()) :: yazl(a) when a: var
+  def inserts(yazl, vals, dir \\ :rdir)
+
+  def inserts(z, [], _), do: z
+  def inserts(z, [v], dir), do: insert(z, v, dir)
+  def inserts({l, r}, vs, :rdir), do: {l, vs ++ r}
+  def inserts({l, r}, vs, :ldir), do: {Enum.reverse(vs, l), r}
+  def inserts({l, r}, vs, :endr), do: {l, r ++ vs}
+  def inserts({l, r}, vs, :endl), do: {l ++ Enum.reverse(vs), r}
+
+  # ------
+  # delete
+  # ------
+
+  @doc """
+  Delete the value to the right or left of the focus.
+
+  If the yazl is empty, or the focus is already
+  at the beginning or end of a list, then return `:endr` or `:endl`.
+
+  This is fast constant time O(1).
+  """
+  @spec delete(yazl(a), direction()) :: endable(yazl(a)) when a: var
+  def delete(yazl, dir \\ :rdir)
+  def delete({_, []}, :rdir), do: :endr
+  def delete({[], _}, :ldir), do: :endl
+  def delete({l, [_ | rt]}, :rdir), do: {l, rt}
+  def delete({[_ | lt], r}, :ldir), do: {lt, r}
+
+  @doc """
+  Delete the indicated sublist.
+
+  If the yazl is empty, return the empty yazl.
+
+  For truncate right, the focus will be positioned after the
+  last element of the left sublist.
+
+  For truncate left, the focus will be positioned before the
+  first element of the right sublist.
+
+  This is fast constant time O(1).
+  """
+  @spec truncate(yazl(a), direction()) :: yazl(a) when a: var
+  def truncate({l, _}, :rdir), do: {l, []}
+  def truncate({_, r}, :ldir), do: {[], r}
+
+  # ---------
+  # functions
+  # ---------
+
+  @doc """
+  Apply a map while leaving the focus unchanged.
+
+  If the yazl is empty it will be unchanged.
+  """
+  @spec map(yazl(a), E.mapper(a, b)) :: yazl(b) when a: var, b: var
+  def map({l, r}, mfun), do: {Enum.map(l, mfun), Enum.map(r, mfun)}
 end
