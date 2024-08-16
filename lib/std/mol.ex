@@ -60,7 +60,8 @@ defmodule Exa.Std.Mol do
   If the key does not exist, return `nil`.
   """
   @spec length(mol(), key()) :: nil | E.count()
-  def length(mol, k), do: if(Map.has_key?(mol, k), do: length(get(mol, k)), else: nil)
+  def length(mol, k) when is_map_key(mol, k), do: mol |> get(k) |> length()
+  def length(_, _), do: nil
 
   @doc """
   Get the total length of all the lists,

@@ -29,14 +29,8 @@ defmodule Exa.Std.Tidal do
     ascending sequence from the set, perhaps up to the HWM
 
   """
+  use Exa.Constants
   import Exa.Types
-
-  # ---------
-  # constants 
-  # ---------
-
-  # Range object with no values
-  @empty_range 0..1//-1
 
   # -----
   # types 
@@ -46,7 +40,7 @@ defmodule Exa.Std.Tidal do
   @type id() :: pos_integer()
   defguard is_id(id) when is_pos_int(id)
 
-  @typedoc "A watermark that may be 0 or an id()."
+  @typedoc "A watermark that may be 0 or id."
   @type wm() :: 0 | id()
   defguard is_wm(wm) when is_nonneg_int(wm)
 
@@ -85,6 +79,13 @@ defmodule Exa.Std.Tidal do
                   is_wm(elem(t, 1)) and
                   is_wm(elem(t, 2)) and
                   is_struct(elem(t, 3), MapSet)
+
+  @typedoc """
+  The tidal contents as a (possibly empty) range
+  and a (possibly empty) sorted list of additional values
+  beyond the contiguous range (above the LWM).
+  """
+  @type range_list() :: {Range.t(), [id()]}
 
   # -----------------
   # public functions
@@ -128,9 +129,10 @@ defmodule Exa.Std.Tidal do
 
   @doc """
   Export as a range and an ascending list of extra values.
+
   If the tidal is empty, then the output range and list are both empty.
   """
-  @spec to_range_list(tidal()) :: {Range.t(), [id()]}
+  @spec to_range_list(tidal()) :: range_list()
 
   def to_range_list({:tidal, 0, 0, _empty}), do: {@empty_range, []}
 
