@@ -1,4 +1,4 @@
-## EXA Standard
+# EXA Standard
 
 𝔼𝕏tr𝔸 𝔼li𝕏ir 𝔸dditions (𝔼𝕏𝔸)
 
@@ -8,7 +8,7 @@ Standard library for new data structures.
 
 Module path: `Exa.Std`
 
-### Features
+## Features
 
 - Histograms for positive integer labels (IDs)
   - 1D using the Erlang `:array` module
@@ -19,11 +19,21 @@ Module path: `Exa.Std`
 - Character Stream: incremental char from a binary String with line/column address
 - Tidal: managing out-of-order streaming sequence (integer IDs)
 - Map of Lists (MoL)
+- Map of Sets (MoS)
 - Yet Another Zip List (yazl): list with local cursor
 
-### License
+## Building
+
+To bootstrap an `exa_xxx` library build, 
+you must run `mix deps.get` twice.
+
+## Acknowledgements
+
+Any hand-drawn diagrams are created with [Excalidraw](https://excalidraw.com/)
+
+## EXA License
 
 EXA source code is released under the MIT license.
 
-EXA code and documentation are:
+EXA code and documentation are:<br>
 Copyright (c) 2024 Mike French
