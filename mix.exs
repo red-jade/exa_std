@@ -5,7 +5,7 @@ defmodule Exa.Std.MixProject do
     [
       app: :exa_std,
       name: "Exa Std",
-      version: "0.1.7",
+      version: "0.2.0",
       elixir: "~> 1.15",
       erlc_options: [:verbose, :report_errors, :report_warnings, :export_all],
       start_permanent: Mix.env() == :prod,
@@ -92,7 +92,7 @@ defmodule Exa.Std.MixProject do
     if deps != [] and String.starts_with?(cmd, ["deps", "compile"]) do
       IO.inspect(deps, label: "#{name} #{scope}")
     end
-    
+
     [exa_project()|deps]
   end
 
