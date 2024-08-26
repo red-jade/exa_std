@@ -5,7 +5,7 @@ defmodule Exa.Std.Mos do
   The presence of the empty set is significant.
   There is a difference between a missing key
   and a key with the empty set as a value.
-  There is no policy of removal-on-empty, 
+  There is no policy of removal-on-empty.
 
   An MoS is a Map, so all `Map` and `Exa.Map` functions can be applied.
 

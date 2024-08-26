@@ -2,7 +2,7 @@ defmodule Exa.Std.RleInt do
   @moduledoc """
   Run Length Encoded (RLE) list of integers,
   with lossless compression of the tail 
-  using binary delta values.
+  using delta values encoded as binary.
 
   The integer RLE has a fixed number of bits
   to express delta values. 

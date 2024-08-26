@@ -6,10 +6,10 @@ defmodule Exa.Std.Mol do
   and fetch default of empty, to keep the map sparse 
   in the presence of many empty list values.
 
-  An MoL is a Map, so all Map and `Exa.Map` functions can be applied.
+  An MoL is a Map, so all `Map` and `Exa.Map` functions can be applied.
 
   The general policy is not to include a function in MoL 
-  if it is available in Map or Exa.Map (no delegate wrappers).
+  if it is available in `Map` or `Exa.Map` (no delegate wrappers).
   However, there are exceptions:
   - `get` is provided
   - `set` is used as an alias for `put`,
