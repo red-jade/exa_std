@@ -62,6 +62,10 @@ defmodule Exa.Std.Histo2D do
   def get(h, b) when is_histo2d(h) and is_bin2d(b) and is_map_key(h, b), do: Map.fetch!(h, b)
   def get(_, b) when is_bin2d(b), do: 0
 
+  @doc "Get the maximum count."
+  @spec max_count(H.histo2d()) :: E.count()
+  def max_count(h), do: h |> Map.values() |> Enum.max(fn -> 0 end) |> max(0)
+
   @doc "Add one count to a bin of the histogram."
   @spec inc(H.histo2d(), H.bin2d()) :: H.histo2d()
   def inc(histo, bin) when is_histo2d(histo) and is_bin2d(bin) do
