@@ -3,7 +3,7 @@ defmodule Exa.Std.MixProject do
 
   @lib  :exa_std
   @name "Exa Std"
-  @ver  "0.2.3"
+  @ver  "0.2.4"
 
   # umbrella project
   @exa {:exa,
