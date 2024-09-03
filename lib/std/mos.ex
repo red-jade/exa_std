@@ -155,7 +155,7 @@ defmodule Exa.Std.Mos do
   """
   @spec set(mos(k, v), k, MapSet.t(v) | [v]) :: mos(k, v) when k: var, v: var
 
-  def set(mos, k, vs) when is_mos(mos) and is_struct(vs, MapSet) do
+  def set(mos, k, vs) when is_mos(mos) and is_set(vs) do
     Map.put(mos, k, vs)
   end
 
@@ -235,16 +235,18 @@ defmodule Exa.Std.Mos do
 
   @doc """
   Add a collection of new values to the set for a key.
+
+  The collection should be a set, 
+  or another scalar enumerable (e.g. list, range).
+
   If the key does not exist, it is added.
   """
   @spec adds(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
-  def adds(mos, k, vs) when is_mos(mos) and (is_set(vs) or is_list(vs)) do
+  def adds(mos, k, vs) when is_mos(mos) and
+      (is_set(vs) or is_list(vs) or is_range(vs)) do
     set = get(mos, k, @empty_set) 
-    new_set = cond do
-      is_set(vs) -> MapSet.union(set,vs)
-      true -> MapSet.union(set,MapSet.new(vs))
-    end
-    Map.put(mos, k, new_set)
+    col = if is_set(vs), do: vs, else: MapSet.new(vs)
+    Map.put(mos, k, MapSet.union(set,col))
   end
 
   @doc """
@@ -263,7 +265,21 @@ defmodule Exa.Std.Mos do
   def remove(mos, _k, _v) when is_mos(mos), do: mos
 
   @doc """
-  Remove a value from all of the sets.
+  Remove a collection of values from the set for a key.
+
+  The collection should be a set, 
+  or another scalar enumerable (e.g. list, range).
+  """
+  @spec removes(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
+  def removes(mos, k, vs) when is_mos(mos) and 
+     (is_set(vs) or is_list(vs) or is_range(vs)) do
+    set = get(mos, k, @empty_set) 
+    col = if is_set(vs), do: vs, else: MapSet.new(vs)
+    Map.put(mos, k, MapSet.difference(set,col))
+  end
+
+  @doc """
+  Remove a value from all of the sets for all keys.
   """
   @spec remove_all(mos(k, v), v) :: mos(k, v) when k: var, v: var
   def remove_all(mos, v) when is_mos(mos) do
