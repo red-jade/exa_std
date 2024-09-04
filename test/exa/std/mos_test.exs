@@ -29,23 +29,26 @@ defmodule Exa.Std.MosTest do
   end
 
   test "add remove" do
-    mos = new() |> adds(:foo, [1]) |> adds(:foo, [2,3]) |> adds(:bar, [1, 3, 4])
+    mos = new() |> adds(:foo, [1]) |> adds(:foo, [2, 3]) |> adds(:bar, [1, 3, 4])
+
     assert mos == %{
-      :foo => MapSet.new([1, 2, 3]),
-      :bar => MapSet.new([1, 3, 4])
-    }
+             :foo => MapSet.new([1, 2, 3]),
+             :bar => MapSet.new([1, 3, 4])
+           }
 
-    mos1 = mos |> removes(:foo, MapSet.new([1,2]))
+    mos1 = mos |> removes(:foo, MapSet.new([1, 2]))
+
     assert mos1 == %{
-      :foo => MapSet.new([3]),
-      :bar => MapSet.new([1, 3, 4])
-    }
+             :foo => MapSet.new([3]),
+             :bar => MapSet.new([1, 3, 4])
+           }
 
-    mos2 = mos |> removes(:foo, [2,3]) |> removes(:bar, 1..4)
+    mos2 = mos |> removes(:foo, [2, 3]) |> removes(:bar, 1..4)
+
     assert mos2 == %{
-      :foo => MapSet.new([1]),
-      :bar => MapSet.new()
-    }
+             :foo => MapSet.new([1]),
+             :bar => MapSet.new()
+           }
   end
 
   test "invert" do

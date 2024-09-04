@@ -56,9 +56,9 @@ defmodule Exa.Std.Mos do
   def new(), do: %{}
 
   @doc "Create a new MoS from an MoL."
-  @spec from_mol(M.mol(k,v)) :: mos(k,v) when k: var, v: var
+  @spec from_mol(M.mol(k, v)) :: mos(k, v) when k: var, v: var
   def from_mol(mol) when is_mol(mol) do
-    Enum.reduce(mol, new(), fn {k,vs}, mos -> set(mos,k,vs) end)
+    Enum.reduce(mol, new(), fn {k, vs}, mos -> set(mos, k, vs) end)
   end
 
   @doc """
@@ -66,9 +66,9 @@ defmodule Exa.Std.Mos do
   The order of the new list values is unspecified.
   Use `Exa.Mol.sort/1` to sort the list values.
   """
-  @spec to_mol(mos(k,v)) :: M.mol(k,v) when k: var, v: var
+  @spec to_mol(mos(k, v)) :: M.mol(k, v) when k: var, v: var
   def to_mol(mos) when is_mos(mos) do
-    Enum.reduce(mos, Mol.new(), fn {k,vs}, mol -> Mol.set(mol,k,vs) end)
+    Enum.reduce(mos, Mol.new(), fn {k, vs}, mol -> Mol.set(mol, k, vs) end)
   end
 
   # ---------
@@ -232,10 +232,10 @@ defmodule Exa.Std.Mos do
   If neither key exists, 
   the second key will be added with the empty set.
   """
-  @spec merge(mos(k,v), k, k) :: mos(k,v) when k: var, v: var
+  @spec merge(mos(k, v), k, k) :: mos(k, v) when k: var, v: var
   def merge(mos, k1, k2) do
-    set2 = get(mos,k2,@empty_set)
-    mos |> adds(k1,set2) |> Map.delete(k2)
+    set2 = get(mos, k2, @empty_set)
+    mos |> adds(k1, set2) |> Map.delete(k2)
   end
 
   @doc """
@@ -257,11 +257,12 @@ defmodule Exa.Std.Mos do
   If the key does not exist, it is added.
   """
   @spec adds(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
-  def adds(mos, k, vs) when is_mos(mos) and
-      (is_set(vs) or is_list(vs) or is_range(vs)) do
-    set = get(mos, k, @empty_set) 
+  def adds(mos, k, vs)
+      when is_mos(mos) and
+             (is_set(vs) or is_list(vs) or is_range(vs)) do
+    set = get(mos, k, @empty_set)
     col = if is_set(vs), do: vs, else: MapSet.new(vs)
-    Map.put(mos, k, MapSet.union(set,col))
+    Map.put(mos, k, MapSet.union(set, col))
   end
 
   @doc """
@@ -286,11 +287,12 @@ defmodule Exa.Std.Mos do
   or another scalar enumerable (e.g. list, range).
   """
   @spec removes(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
-  def removes(mos, k, vs) when is_mos(mos) and 
-     (is_set(vs) or is_list(vs) or is_range(vs)) do
-    set = get(mos, k, @empty_set) 
+  def removes(mos, k, vs)
+      when is_mos(mos) and
+             (is_set(vs) or is_list(vs) or is_range(vs)) do
+    set = get(mos, k, @empty_set)
     col = if is_set(vs), do: vs, else: MapSet.new(vs)
-    Map.put(mos, k, MapSet.difference(set,col))
+    Map.put(mos, k, MapSet.difference(set, col))
   end
 
   @doc """

@@ -1,9 +1,9 @@
 defmodule Exa.Std.MixProject do
   use Mix.Project
 
-  @lib  :exa_std
+  @lib :exa_std
   @name "Exa Std"
-  @ver  "0.2.4"
+  @ver "0.2.4"
 
   # umbrella project
   @exa {:exa,
@@ -21,6 +21,7 @@ defmodule Exa.Std.MixProject do
         if not Code.loaded?(Exa.MixUtil) do
           [{Exa.MixUtil, _}] = Code.compile_file(@mix_util)
         end
+
         Exa.MixUtil.exa_deps(@lib, exa_libs())
       else
         # bootstrap
@@ -34,7 +35,7 @@ defmodule Exa.Std.MixProject do
       elixir: "~> 1.17",
       erlc_options: [:verbose, :report_errors, :report_warnings, :export_all],
       start_permanent: Mix.env() == :prod,
-      deps: [@exa|exa_deps] ++ local_deps(),
+      deps: [@exa | exa_deps] ++ local_deps(),
       docs: docs(),
       test_pattern: "*_test.exs",
       dialyzer: [flags: [:no_improper_lists]]
@@ -57,16 +58,15 @@ defmodule Exa.Std.MixProject do
   end
 
   defp exa_libs() do
-    [  
-      :exa_core, 
-      :exa_space, 
-      :dialyxir, 
+    [
+      :exa_core,
+      :exa_space,
+      :dialyxir,
       :ex_doc
     ]
   end
 
-  defp local_deps() do 
-    [
-    ]
+  defp local_deps() do
+    []
   end
 end
