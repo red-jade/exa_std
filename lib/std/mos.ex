@@ -21,7 +21,12 @@ defmodule Exa.Std.Mos do
   import Exa.Types
   alias Exa.Types, as: E
 
-  # TODO - small space optimization is to make MoS values for 0,1
+  import Exa.Std.Mol, only: [is_mol: 1]
+  alias Exa.Std.Mol, as: M
+  alias Exa.Std.Mol
+
+  # TODO - small space optimization is to make 
+  #        special MoS values for 0,1 cardinality
   #   0 - nil or :empty
   #   1 - id
   #   n - MapSet
@@ -49,6 +54,22 @@ defmodule Exa.Std.Mos do
   @doc "Create new MoS."
   @spec new() :: mos(key(), any())
   def new(), do: %{}
+
+  @doc "Create a new MoS from an MoL."
+  @spec from_mol(M.mol(k,v)) :: mos(k,v) when k: var, v: var
+  def from_mol(mol) when is_mol(mol) do
+    Enum.reduce(mol, new(), fn {k,vs}, mos -> set(mos,k,vs) end)
+  end
+
+  @doc """
+  Create a new MoL from an MoS.
+  The order of the new list values is unspecified.
+  Use `Exa.Mol.sort/1` to sort the list values.
+  """
+  @spec to_mol(mos(k,v)) :: M.mol(k,v) when k: var, v: var
+  def to_mol(mos) when is_mos(mos) do
+    Enum.reduce(mos, Mol.new(), fn {k,vs}, mol -> Mol.set(mol,k,vs) end)
+  end
 
   # ---------
   # accessors
@@ -112,13 +133,13 @@ defmodule Exa.Std.Mos do
   Get the total size of all the sets,
   hence the total number of values.
   """
-  @spec sizes(mos(any(), any())) :: E.count()
+  @spec sizes(mos(key(), any())) :: E.count()
   def sizes(mos) when is_mos(mos) do
     Enum.reduce(mos, 0, fn {_, vs}, n -> n + MapSet.size(vs) end)
   end
 
   @doc "Get the union of all the sets."
-  @spec union_values(mos(any(), v)) :: MapSet.t(v) when v: var
+  @spec union_values(mos(key(), v)) :: MapSet.t(v) when v: var
   def union_values(mos) when is_mos(mos) do
     Enum.reduce(mos, MapSet.new(), fn {_, vs}, set ->
       MapSet.union(set, vs)
@@ -149,20 +170,14 @@ defmodule Exa.Std.Mos do
   @doc """
   Set a key to a new set value.
 
-  The new value can be passed as `MapSet` or list.
+  The new value can be passed as `MapSet` 
+  or another scalar enumerable (e.g. list, range).
 
   If the key does not exist, it is added.
   """
-  @spec set(mos(k, v), k, MapSet.t(v) | [v]) :: mos(k, v) when k: var, v: var
-
-  def set(mos, k, vs) when is_mos(mos) and is_set(vs) do
-    Map.put(mos, k, vs)
-  end
-
-  def set(mos, k, vs) when is_mos(mos) and is_list(vs) do
-    # could be any enumerable here
-    Map.put(mos, k, MapSet.new(vs))
-  end
+  @spec set(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
+  def set(mos, k, vs) when is_mos(mos) and is_set(vs), do: Map.put(mos, k, vs)
+  def set(mos, k, vs) when is_mos(mos), do: Map.put(mos, k, MapSet.new(vs))
 
   @doc """
   Invert the MoS.
@@ -195,8 +210,8 @@ defmodule Exa.Std.Mos do
 
   The output will have the same set of keys as the input.
 
-  An involution is reversible.
-  If the involution is applied twice, 
+  An involution is reversible:
+  if the involution is applied twice, 
   it will return the original input.
   """
   @spec involute(mos(k, k)) :: mos(k, k) when k: var
