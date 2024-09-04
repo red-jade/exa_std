@@ -26,7 +26,9 @@ defmodule Exa.Std.Mol do
 
   @type key() :: any()
 
-  @type mol() :: %{key() => list()}
+  @typedoc "A Map of Lists (MoL)."
+  @type mol(k,v) :: %{k => [v]} 
+
   defguard is_mol(mol) when is_map(mol)
 
   # -----------
@@ -34,7 +36,7 @@ defmodule Exa.Std.Mol do
   # -----------
 
   @doc "Create new MoL."
-  @spec new() :: mol()
+  @spec new() :: mol(key(),any())
   def new(), do: %{}
 
   # ---------
@@ -52,14 +54,14 @@ defmodule Exa.Std.Mol do
   distinguishes between a key with an empty list
   and a missing key.
   """
-  @spec get(mol(), key(), any()) :: any()
+  @spec get(mol(k,v), k, t) :: v | t when t: var, k: var, v: var
   def get(mol, k, default \\ []), do: Map.get(mol, k, default)
 
   @doc """
   Get the length of the list value for a key.
   If the key does not exist, return `nil`.
   """
-  @spec length(mol(), key()) :: nil | E.count()
+  @spec length(mol(k,any()), k) :: nil | E.count() when k: var
   def length(mol, k) when is_map_key(mol, k), do: mol |> get(k) |> length()
   def length(_, _), do: nil
 
@@ -67,9 +69,18 @@ defmodule Exa.Std.Mol do
   Get the total length of all the lists,
   hence the total number of values.
   """
-  @spec lengths(mol()) :: E.count()
+  @spec lengths(mol(any(),any())) :: E.count() 
   def lengths(mol), do: Enum.reduce(mol, 0, fn {_, vs}, n -> n + length(vs) end)
 
+  @doc """
+  Compare two MoLs for equality, ignoring list order.
+
+  If there are no repeated values, 
+  then this is equivalent to set semantics.
+  """
+  @spec equal?(mol(any(),any()), mol(any(),any())) :: bool() when k: var, v: var
+  def equal?(mol1, mol2), do: sort(mol1) == sort(mol2)
+   
   # -------
   # updates
   # -------
@@ -78,23 +89,28 @@ defmodule Exa.Std.Mol do
   Set a key to the empty list.
   If the key does not exist, it is added.
   """
-  @spec empty(mol(), key()) :: mol()
+  @spec empty(mol(k,v), k) :: mol(k,v) when k: var, v: var
   def empty(mol, k), do: set(mol, k, [])
 
   @doc """
   Set a key to a new list value.
-  If the key does not exist, it is added.
+  The new value may be a list,
+  or any other scalar enumerable (e.g. MapSet, range).
+
   If the list is empty, the key is deleted.
+
+  If the key does not exist, it is added.
   """
-  @spec set(mol(), key(), list()) :: mol()
+  @spec set(mol(k,v), k, Enumerable.t(v)) :: mol(k,v) when k: var, v: var
   def set(mol, k, []), do: Map.delete(mol, k)
   def set(mol, k, vs) when is_list(vs), do: Map.put(mol, k, vs)
+  def set(mol, k, vs), do: set(mol, k, Enum.to_list(vs))
 
   @doc """
   Add a new single value to the beginning of the list (prepend).
   If the key does not exist, it is added.
   """
-  @spec add(mol(), key(), any()) :: mol()
+  @spec add(mol(k,v), k, v) :: mol(k,v) when k: var, v: var
   def add(mol, k, v), do: prepend(mol, k, v)
 
   @doc """
@@ -105,7 +121,7 @@ defmodule Exa.Std.Mol do
   It is an error if the key does not exist, 
   or the value was not found.
   """
-  @spec remove(mol(), key(), any()) :: mol() | :error
+  @spec remove(mol(k,v), k, v) :: mol(k,v) | :error when k: var, v: var
   def remove(mol, k, v) do
     vals = get(mol, k)
     if v not in vals, do: :error, else: set(mol, k, List.delete(vals, v))
@@ -116,7 +132,7 @@ defmodule Exa.Std.Mol do
 
   If the resulting list is empty, delete the key.
   """
-  @spec remove_all(mol(), key(), any()) :: mol()
+  @spec remove_all(mol(k,v), k, v) :: mol(k,v) when k: var, v: var
   def remove_all(mol, k, v) do
     case get(mol, k) do
       [] ->
@@ -134,36 +150,36 @@ defmodule Exa.Std.Mol do
   Prepend a new single value to the beginning of the list.
   If the key does not exist, it is added.
   """
-  @spec prepend(mol(), key(), any()) :: mol()
+  @spec prepend(mol(k,v), k, v) :: mol(k,v) when k: var, v: var
   def prepend(mol, k, v), do: set(mol, k, [v | get(mol, k)])
 
   @doc """
   Prepend a list to the beginning of the list.
   If the key does not exist, it is added.
   """
-  @spec prepends(mol(), key(), list()) :: mol()
+  @spec prepends(mol(k,v), k, [v]) :: mol(k,v) when k: var, v: var
   def prepends(mol, k, vs) when is_list(vs), do: set(mol, k, vs ++ get(mol, k))
 
   @doc """
   Append a new value to the end of the list.
   If the key does not exist, it is added.
   """
-  @spec append(mol(), key(), any()) :: mol()
+  @spec append(mol(k,v), k, v) :: mol(k,v) when k: var, v: var
   def append(mol, k, v), do: appends(mol, k, [v])
 
   @doc """
   Append a list to the end of the list.
   If the key does not exist, it is added.
   """
-  @spec appends(mol(), key(), any()) :: mol()
+  @spec appends(mol(k,v), k, v) :: mol(k, v) when k: var, v: var
   def appends(mol, k, vs), do: set(mol, k, get(mol, k) ++ vs)
 
   @doc "Reverse all lists in the MoL."
-  @spec reverse(mol()) :: mol()
+  @spec reverse(mol(k,v)) :: mol(k,v) when k: var, v: var
   def reverse(mol), do: Exa.Map.map(mol, &Enum.reverse/1)
 
   @doc "Sort all lists in the MoL."
-  @spec sort(mol()) :: mol()
+  @spec sort(mol(k,v)) :: mol(k,v) when k: var, v: var
   def sort(mol), do: Exa.Map.map(mol, &Enum.sort/1)
 
   @doc """
@@ -174,7 +190,7 @@ defmodule Exa.Std.Mol do
 
   If the key is missing, or the list is empty, then return `:error`.
   """
-  @spec take_hd(mol(), key()) :: {:ok, any(), mol()} | :error
+  @spec take_hd(mol(k,v), k) :: {:ok, v, mol(k,v)} | :error when k: var, v: var
   def take_hd(mol, k) do
     case get(mol, k) do
       [] -> :error
@@ -188,7 +204,7 @@ defmodule Exa.Std.Mol do
 
   If the key did not exist, return `:no_value`.
   """
-  @spec flush(mol(), key()) :: {:no_value | any(), mol()}
+  @spec flush(mol(k,v), k) :: {:no_value | [v], mol(k,v)} when k: var, v: var
   def flush(mol, k) do
     val =
       case Map.fetch(mol, k) do
