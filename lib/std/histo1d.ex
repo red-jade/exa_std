@@ -1,6 +1,6 @@
 defmodule Exa.Std.Histo1D do
   @moduledoc """
-  1D Histogram in the Exa standard library.
+  1D Histogram.
 
   A table of counts of occurrences of 0-based 
   positive integers (data index values).

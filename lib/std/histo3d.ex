@@ -1,6 +1,6 @@
 defmodule Exa.Std.Histo3D do
   @moduledoc """
-  3D Histogram in the Exa standard library.
+  3D Histogram.
 
   A count of occurrences of triples of 
   0-based positive integers (data, index or color values).
@@ -52,8 +52,7 @@ defmodule Exa.Std.Histo3D do
 
   @doc "Get the count for a bin."
   @spec get(H.histo3d(), H.bin3d()) :: E.count()
-  def get(h, b) when is_histo3d(h) and is_bin3d(b) and is_map_key(h, b), do: Map.fetch!(h, b)
-  def get(_, b) when is_bin3d(b), do: 0
+  def get(h, b) when is_histo3d(h) and is_bin3d(b), do: Map.get(h, b, 0)
 
   @doc "Add one count to a bin of the histogram."
   @spec inc(H.histo3d(), H.bin3d()) :: H.histo3d()

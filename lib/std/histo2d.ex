@@ -1,6 +1,6 @@
 defmodule Exa.Std.Histo2D do
   @moduledoc """
-  2D Histogram in the Exa standard library.
+  2D Histogram.
 
   A table of counts of occurrences of pairs of 
   0-based non-negative integers (data index values).
@@ -59,8 +59,7 @@ defmodule Exa.Std.Histo2D do
 
   @doc "Get the count for a bin."
   @spec get(H.histo2d(), H.bin2d()) :: E.count()
-  def get(h, b) when is_histo2d(h) and is_bin2d(b) and is_map_key(h, b), do: Map.fetch!(h, b)
-  def get(_, b) when is_bin2d(b), do: 0
+  def get(h, b) when is_histo2d(h) and is_bin2d(b), do: Map.get(h, b, 0)
 
   @doc "Get the maximum count."
   @spec max_count(H.histo2d()) :: E.count()

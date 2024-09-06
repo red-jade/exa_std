@@ -51,6 +51,12 @@ defmodule Exa.Std.HistoTypes do
            when is_tuple(d) and tuple_size(d) == 3 and
                   is_integer(elem(d, 0)) and is_integer(elem(d, 1)) and is_integer(elem(d, 2))
 
+  @typedoc """
+  A general histogram with a count for arbitrary data value.
+  """
+  @type histo() :: %{any() => E.count()}
+  defguard is_histo(h) when is_map(h)
+
   @typedoc "A 1D histogram with a count for an index bin value."
   @type histo1d() :: :array.array(E.count())
 
