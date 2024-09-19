@@ -47,23 +47,18 @@ defmodule Exa.Std.Mol do
   Get the value for a key.
 
   If the key does not exist, 
-  return the default argument (defaults to empty list).
-
-  The default does not have to be a list.
-  For example, using a default of `nil`
-  distinguishes between a key with an empty list
-  and a missing key.
+  return the empty list.
   """
-  @spec get(mol(k, v), k, t) :: v | t when t: var, k: var, v: var
-  def get(mol, k, default \\ []), do: Map.get(mol, k, default)
+  @spec get(mol(k, v), k) :: [v] when t: var, k: var, v: var
+  def get(mol, k), do: Map.get(mol, k, [])
 
   @doc """
   Get the length of the list value for a key.
-  If the key does not exist, return `nil`.
+  If the key does not exist, return 0.
   """
-  @spec length(mol(k, any()), k) :: nil | E.count() when k: var
+  @spec length(mol(k, any()), k) :: E.count() when k: var
   def length(mol, k) when is_map_key(mol, k), do: mol |> get(k) |> length()
-  def length(_, _), do: nil
+  def length(_, _), do: 0
 
   @doc """
   Get the total length of all the lists,
@@ -86,8 +81,8 @@ defmodule Exa.Std.Mol do
   # -------
 
   @doc """
-  Set a key to the empty list.
-  If the key does not exist, it is added.
+  Set a key to the empty list,
+  which means the entry is deleted.
   """
   @spec empty(mol(k, v), k) :: mol(k, v) when k: var, v: var
   def empty(mol, k), do: set(mol, k, [])
@@ -118,14 +113,11 @@ defmodule Exa.Std.Mol do
 
   If the resulting list is empty, delete the key.
 
-  It is an error if the key does not exist, 
+  It is not an error if the key does not exist, 
   or the value was not found.
   """
   @spec remove(mol(k, v), k, v) :: mol(k, v) | :error when k: var, v: var
-  def remove(mol, k, v) do
-    vals = get(mol, k)
-    if v not in vals, do: :error, else: set(mol, k, List.delete(vals, v))
-  end
+  def remove(mol, k, v), do: set(mol, k, List.delete(get(mol, k), v))
 
   @doc """
   Remove all occurrences of a value from the list.
@@ -185,33 +177,26 @@ defmodule Exa.Std.Mol do
   @doc """
   Take the first entry (head) of the list, 
   and remove it from the values.
+
   If the list is a singleton and the head is the only element,
   then remove the key entry from the map.
 
-  If the key is missing, or the list is empty, then return `:error`.
+  If the key is missing (empty value), return `:error`.
   """
-  @spec take_hd(mol(k, v), k) :: {:ok, v, mol(k, v)} | :error when k: var, v: var
+  @spec take_hd(mol(k, v), k) :: {v, mol(k, v)} | :error when k: var, v: var
   def take_hd(mol, k) do
     case get(mol, k) do
       [] -> :error
-      [h] -> {:ok, h, Map.delete(mol, k)}
-      [h | t] -> {:ok, h, set(mol, k, t)}
+      [h | t] -> {h, set(mol, k, t)}
     end
   end
 
   @doc """
   Delete a key and return the final value.
 
-  If the key did not exist, return `:no_value`.
+  If the key does not exist, 
+  return the empty list and the original input.
   """
-  @spec flush(mol(k, v), k) :: {:no_value | [v], mol(k, v)} when k: var, v: var
-  def flush(mol, k) do
-    val =
-      case Map.fetch(mol, k) do
-        {:ok, v} -> v
-        :error -> :no_value
-      end
-
-    {val, Map.delete(mol, k)}
-  end
+  @spec flush(mol(k, v), k) :: {[v], mol(k, v)} when k: var, v: var
+  def flush(mol, k), do: {get(mol, k), set(mol, k, [])}
 end

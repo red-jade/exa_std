@@ -7,19 +7,29 @@ defmodule Exa.Std.MolTest do
   test "simple" do
     mol = new() |> add(:foo, 1) |> add(:foo, 2)
     assert 2 == length(mol, :foo)
-    assert [2, 1] = get(mol, :foo)
+    assert [2, 1] == get(mol, :foo)
 
     mol = mol |> append(:foo, 3) |> append(:foo, 1) |> append(:foo, 1)
-    assert [2, 1, 3, 1, 1] = get(mol, :foo)
+    assert [2, 1, 3, 1, 1] == get(mol, :foo)
 
-    assert {:ok, 2, mol} = take_hd(mol, :foo)
+    assert {2, mol} = take_hd(mol, :foo)
     mol = mol |> add(:bar, 9)
 
     assert 5 == lengths(mol)
 
-    assert [3, 1, 1] = mol |> remove(:foo, 1) |> get(:foo)
+    assert [3, 1, 1] == mol |> remove(:foo, 1) |> get(:foo)
 
-    assert [3] = mol |> remove_all(:foo, 1) |> get(:foo)
+    assert [3] == mol |> remove_all(:foo, 1) |> get(:foo)
+  end
+
+  test "equality" do
+    mol1 = new() |> set(:foo, [3,1,3,4]) |> set(:bar, [1,1,2,2])
+    mol2 = new() |> set(:foo, [3,4,1,3]) |> set(:bar, [2,2,1,1])
+    assert equal?(mol1, mol2)
+
+    mol1 = mol1 |> remove(:bar, 1)
+    mol2 = mol2 |> remove(:bar, 2)
+    assert not equal?(mol1, mol2)
   end
 
   test "reverse" do

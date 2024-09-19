@@ -62,6 +62,23 @@ defmodule Exa.Std.MosTest do
            }
   end
 
+  test "merge" do
+    mos1 = new() |> adds(:foo, [1, 2]) |> adds(:bar, [4])
+    mos2 = new() |> adds(:foo, [1, 3]) |> adds(:baz, [5])
+
+    mkey = merge(mos1, :foo, :bar)
+    assert mkey == %{
+             :foo => MapSet.new([1, 2, 4]),
+           }
+
+    mall = merge(mos1, mos2)
+    assert mall == %{
+             :foo => MapSet.new([1, 2, 3]),
+             :bar => MapSet.new([4]),
+             :baz => MapSet.new([5])
+           }
+  end
+
   test "involute" do
     mos = new() |> touch(2) |> touch(3) |> adds(1, [1, 3])
     som = involute(mos)

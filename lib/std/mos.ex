@@ -190,7 +190,7 @@ defmodule Exa.Std.Mos do
   @spec invert(mos(k, v)) :: mos(v, k) when k: var, v: var
   def invert(mos) when is_mos(mos) do
     Enum.reduce(mos, new(), fn {k, set}, out ->
-      reduce(out, set, &add(&2, &1, k))
+      Enum.reduce(set, out, &add(&2, &1, k))
     end)
   end
 
@@ -222,20 +222,36 @@ defmodule Exa.Std.Mos do
   end
 
   @doc """
-  Merge two entries in the MoS.
+  Merge two entries in an MoS.
 
   Set the value of the first key 
   to be the union of both key's value sets.
   Delete the second key.
 
-  If the first key does not exist, it is added.
-  If neither key exists, 
-  the second key will be added with the empty set.
+  If the first key does not exist, 
+  it is added with the value of the second key.
+
+  If the second key does not exist, the map is unchanged.
   """
   @spec merge(mos(k, v), k, k) :: mos(k, v) when k: var, v: var
-  def merge(mos, k1, k2) do
-    set2 = get(mos, k2, @empty_set)
+
+  def merge(mos, k1, k2) when is_map_key(mos, k2) do
+    set2 = Map.fetch!(mos, k2)
     mos |> adds(k1, set2) |> Map.delete(k2)
+  end
+
+  def merge(mos, _, _), do: mos
+
+  @doc """
+  Merge two MoS.
+
+  The result will have the union of boths sets of keys.
+  Distinct keys are added with their existing set values.
+  Equal keys will be given the union of their existing set values.
+  """
+  @spec merge(mos(k, v), mos(k, v)) :: mos(k, v) when k: var, v: var
+  def merge(mos1, mos2) do
+    Map.merge(mos1, mos2, fn _, set1, set2 -> MapSet.union(set1, set2) end)
   end
 
   @doc """
@@ -244,7 +260,7 @@ defmodule Exa.Std.Mos do
   """
   @spec add(mos(k, v), k, v) :: mos(k, v) when k: var, v: var
   def add(mos, k, v) when is_mos(mos) do
-    new_set = mos |> get(k, @empty_set) |> MapSet.put(v)
+    new_set = mos |> get(k) |> MapSet.put(v)
     Map.put(mos, k, new_set)
   end
 
@@ -257,10 +273,8 @@ defmodule Exa.Std.Mos do
   If the key does not exist, it is added.
   """
   @spec adds(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
-  def adds(mos, k, vs)
-      when is_mos(mos) and
-             (is_set(vs) or is_list(vs) or is_range(vs)) do
-    set = get(mos, k, @empty_set)
+  def adds(mos, k, vs) when is_mos(mos) and (is_set(vs) or is_list(vs) or is_range(vs)) do
+    set = get(mos, k)
     col = if is_set(vs), do: vs, else: MapSet.new(vs)
     Map.put(mos, k, MapSet.union(set, col))
   end
@@ -287,10 +301,8 @@ defmodule Exa.Std.Mos do
   or another scalar enumerable (e.g. list, range).
   """
   @spec removes(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
-  def removes(mos, k, vs)
-      when is_mos(mos) and
-             (is_set(vs) or is_list(vs) or is_range(vs)) do
-    set = get(mos, k, @empty_set)
+  def removes(mos, k, vs) when is_mos(mos) and (is_set(vs) or is_list(vs) or is_range(vs)) do
+    set = get(mos, k)
     col = if is_set(vs), do: vs, else: MapSet.new(vs)
     Map.put(mos, k, MapSet.difference(set, col))
   end
