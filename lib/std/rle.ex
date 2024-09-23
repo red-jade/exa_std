@@ -35,7 +35,7 @@ defmodule Exa.Std.Rle do
   The `:rle` tag is necessary to distinguish it from input data."
   """
   @type run() :: {:rle, any(), E.count2()}
-  defguard is_run(r) when is_tag_tuple(r, 3, :rle)
+  defguard is_run(r) when is_tuple_tag(r, 3, :rle)
 
   @typedoc "A run length encoded list."
   @type rle() :: [any() | run()]

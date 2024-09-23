@@ -130,7 +130,7 @@ defmodule Exa.Std.Yazl do
   @type yazl(a) :: {[a], [a]}
 
   @doc "Test if a term appears to be a yazl."
-  defguard is_yazl(z) when is_fix_tuple(z, 2) and is_list(elem(z, 0)) and is_list(elem(z, 1))
+  defguard is_yazl(z) when is_tuple_fix(z, 2) and is_list(elem(z, 0)) and is_list(elem(z, 1))
 
   @doc "Test if a term is an empty yazl."
   defguard is_empty(z) when z == {[], []}

@@ -38,11 +38,11 @@ defmodule Exa.Std.Tidal do
 
   @typedoc "A monotonic ID counter."
   @type id() :: pos_integer()
-  defguard is_id(id) when is_pos_int(id)
+  defguard is_id(id) when is_int_pos(id)
 
   @typedoc "A watermark that may be 0 or id."
   @type wm() :: 0 | id()
-  defguard is_wm(wm) when is_nonneg_int(wm)
+  defguard is_wm(wm) when is_int_nonneg(wm)
 
   @typedoc """
   A tidal data structure, with LWM, HWM and 
@@ -75,7 +75,7 @@ defmodule Exa.Std.Tidal do
   """
   @type tidal() :: {:tidal, wm(), wm(), MapSet.t()}
   defguard is_tidal(t)
-           when is_tag_tuple(t, 4, :tidal) and
+           when is_tuple_tag(t, 4, :tidal) and
                   is_wm(elem(t, 1)) and
                   is_wm(elem(t, 2)) and
                   is_struct(elem(t, 3), MapSet)
