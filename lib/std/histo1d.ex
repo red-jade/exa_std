@@ -72,9 +72,9 @@ defmodule Exa.Std.Histo1D do
   @spec get(H.histo1d(), H.hvalue()) :: E.count()
   def get(h, i) when is_hval(i), do: :array.get(i, h)
 
-  # Set the count at an index."
+  @doc "Set the count at an index."
   @spec set(H.histo1d(), H.hvalue(), E.count()) :: H.histo1d()
-  defp set(h, i, n) when is_hval(i), do: :array.set(i, n, h)
+  def set(h, i, n) when is_hval(i), do: :array.set(i, n, h)
 
   @doc "Add one count to a bin of the histogram."
   @spec inc(H.histo1d(), H.hvalue()) :: H.histo1d()
