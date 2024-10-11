@@ -53,6 +53,8 @@ defmodule Exa.Std.MosTest do
 
   test "invert" do
     mos = new() |> adds(:foo, [1, 2]) |> adds(:bar, [1, 3])
+    assert %{2 => [:bar, :foo]} == index_size(mos)
+
     som = invert(mos)
 
     assert som == %{
@@ -62,16 +64,28 @@ defmodule Exa.Std.MosTest do
            }
   end
 
+  test "pick" do
+    mos1 = new() |> set(:foo, [1, 2]) 
+    {1, mos2} = pick(mos1, :foo)
+    assert %{:foo => MapSet.new([2])} == mos2
+    {2, mos3} = pick(mos2, :foo)
+    assert %{:foo => MapSet.new()} == mos3
+    assert :error = pick(mos3, :foo)
+  end
+
   test "merge" do
     mos1 = new() |> adds(:foo, [1, 2]) |> adds(:bar, [4])
     mos2 = new() |> adds(:foo, [1, 3]) |> adds(:baz, [5])
+    assert %{1 => [:bar], 2 => [:foo]} == index_size(mos1)
 
     mkey = merge(mos1, :foo, :bar)
+
     assert mkey == %{
-             :foo => MapSet.new([1, 2, 4]),
+             :foo => MapSet.new([1, 2, 4])
            }
 
     mall = merge(mos1, mos2)
+
     assert mall == %{
              :foo => MapSet.new([1, 2, 3]),
              :bar => MapSet.new([4]),
@@ -81,6 +95,8 @@ defmodule Exa.Std.MosTest do
 
   test "involute" do
     mos = new() |> touch(2) |> touch(3) |> adds(1, [1, 3])
+    assert %{0 => [3, 2], 2 => [1]} == index_size(mos)
+
     som = involute(mos)
     assert Map.keys(mos) == Map.keys(som)
     assert som == %{1 => MapSet.new([1]), 2 => MapSet.new([]), 3 => MapSet.new([1])}
