@@ -146,6 +146,18 @@ defmodule Exa.Std.Mos do
     end)
   end
 
+  @doc """
+  Index by size.
+  Return a map of set size (non-negative integer) 
+  to a list of the keys that have that size.
+
+  If the MoS is empty, return the empty MoL.
+  """
+  @spec index_size(Mos.mos(k, any())) :: Mos.mos(E.count1(),k) when k: var
+  def index_size(mos) when is_mos(mos) do
+    Enum.reduce(mos, new(), fn {k, vs}, ind -> add(ind, MapSet.size(vs), k) end)
+  end
+
   # -------
   # updates
   # -------
@@ -280,10 +292,34 @@ defmodule Exa.Std.Mos do
   end
 
   @doc """
+  Pick a value from the set, 
+  and remove it from the values.
+
+  If the set value becomes empty, the entry is not removed.
+
+  If the key is empty or missing, return `:error`.
+
+  Assume the Axion of Choice :)
+  """
+  @spec pick(mos(k, v), k) :: {v, Mol.mol(k, v)} | :error when k: var, v: var
+  def pick(mos, k) do
+    vs = get(mos, k)
+    if MapSet.size(vs) == 0 do
+      :error
+    else
+      {h, rem} = Exa.Set.pick(vs)
+      {h, set(mos, k, rem)}
+    end
+  end
+
+  @doc """
   Remove a value from the set for a key.
+
+  If the set value becomes empty, the entry is not removed.
 
   It is not an error if the key does not exist, 
   or the value was not found.
+  In those cases, the argument is returned unchanged.
   """
   @spec remove(mos(k, v), k, v) :: mos(k, v) when k: var, v: var
 
@@ -297,15 +333,24 @@ defmodule Exa.Std.Mos do
   @doc """
   Remove a collection of values from the set for a key.
 
-  The collection should be a set, 
-  or another scalar enumerable (e.g. list, range).
+  The collection should be a set, list or range.
+
+  If the set value becomes empty, the entry is not removed.
+
+  It is not an error if the key does not exist, 
+  or the values were not found.
+  In those cases, the argument is returned unchanged.
   """
   @spec removes(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
-  def removes(mos, k, vs) when is_mos(mos) and (is_set(vs) or is_list(vs) or is_range(vs)) do
+  
+  def removes(mos, k, vs) when is_mos(mos) and is_map_key(mos, k) and
+               (is_set(vs) or is_list(vs) or is_range(vs)) do
     set = get(mos, k)
     col = if is_set(vs), do: vs, else: MapSet.new(vs)
     Map.put(mos, k, MapSet.difference(set, col))
   end
+
+  def removes(mos, _k, _vs) when is_mos(mos), do: mos
 
   @doc """
   Remove a value from all of the sets for all keys.
