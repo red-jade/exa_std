@@ -35,10 +35,6 @@ defmodule Exa.Std.Histo do
   @spec get(H.histo(), any()) :: E.count()
   def get(h, d) when is_histo(h), do: Map.get(h, d, 0)
 
-  @doc "Get the maximum count."
-  @spec max_count(H.histo()) :: E.count()
-  def max_count(h), do: h |> Map.values() |> Enum.max(fn -> 0 end) |> max(0)
-
   @doc "Add one count to a bin of the histogram."
   @spec inc(H.histo(), any()) :: H.histo()
   def inc(histo, d) when is_histo(histo) do
@@ -80,8 +76,46 @@ defmodule Exa.Std.Histo do
   def homogeneous(histo) do
     case map_size(histo) do
       0 -> :empty
-      1 -> {:homo, histo |> Map.to_list() |> hd() |> elem(0)}
+      1 -> {:homo, histo |> Enum.take(1) |> hd() |> elem(0)}
       _ -> :not_homo
+    end
+  end
+
+  @doc """
+  Get the maximum count, 
+  together with a list of values that have that count.
+
+  If the histogram is empty, or contains only negative counts,
+  return `{0, []}`.
+  """
+  @spec max_count(H.histo()) :: {E.count(), [any()]}
+  def max_count(histo) when is_histo(histo) do
+    Enum.reduce(histo, {0, []}, fn
+      {d, n}, {nmax, _ds} when n > nmax -> {n, [d]}
+      {d, nmax}, {nmax, ds} -> {nmax, [d | ds]}
+      _, acc -> acc
+    end)
+  end
+
+  @doc """
+  Get the minimum positive count, 
+  together with a list of values that have that count.
+
+  If the histogram is empty, or contains only negative counts,
+  return `{0, []}`.
+  """
+  @spec min_count(H.histo()) :: {E.count(), [any()]}
+  def min_count(histo) when is_histo(histo) do
+    case Enum.find(histo, fn {_, n} -> n > 0 end) do
+      nil ->
+        {0, []}
+
+      {_, n0} ->
+        Enum.reduce(histo, {n0, []}, fn
+          {d, n}, {nmin, _ds} when n > 0 and n < nmin -> {n, [d]}
+          {d, nmin}, {nmin, ds} -> {nmin, [d | ds]}
+          _, acc -> acc
+        end)
     end
   end
 
