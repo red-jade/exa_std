@@ -57,8 +57,7 @@ defmodule Exa.Std.Mol do
   If the key does not exist, return 0.
   """
   @spec length(mol(k, any()), k) :: E.count() when k: var
-  def length(mol, k) when is_map_key(mol, k), do: mol |> get(k) |> length()
-  def length(_, _), do: 0
+  def length(mol, k), do: mol |> get(k) |> length()
 
   @doc """
   Get the total length of all the lists,
@@ -66,6 +65,55 @@ defmodule Exa.Std.Mol do
   """
   @spec lengths(mol(any(), any())) :: E.count()
   def lengths(mol), do: Enum.reduce(mol, 0, fn {_, vs}, n -> n + length(vs) end)
+
+  @doc """
+  Get the minimum length, 
+  together with a list of keys that have that length.
+
+  If the MoL is empty, return `{0, []}`.
+  """
+  @spec min_length(mol(k, any())) :: {E.count(), [k]} when k: var
+  def min_length(mol) when is_mol(mol) do
+    case Enum.take(mol, 1) do
+      [] ->
+        {0, []}
+
+      [{_, v0}] ->
+        Enum.reduce(mol, {length(v0), []}, fn
+          {k, vs}, {lmin, _ks} when length(vs) < lmin -> {length(vs), [k]}
+          {k, vs}, {lmin, ks} when length(vs) == lmin -> {lmin, [k | ks]}
+          _, acc -> acc
+        end)
+    end
+  end
+
+  @doc """
+  Get the maximum length, 
+  together with a list of keys that have that length.
+
+  If the MoL is empty, return `{0, []}`.
+  """
+  @spec max_length(mol(k, any())) :: {E.count(), [k]} when k: var
+  def max_length(mol) when is_mol(mol) do
+    Enum.reduce(mol, {0, []}, fn
+      {k, vs}, {lmax, _ks} when length(vs) > lmax -> {length(vs), [k]}
+      {k, vs}, {lmax, ks} when length(vs) == lmax -> {lmax, [k | ks]}
+      _, acc -> acc
+    end)
+  end
+
+  @doc """
+  Index by length.
+  
+  Return an MoL from list length (positive integers)
+  to a list of the keys that have that length.
+
+  If the MoL is empty, return the empty MoL.
+  """
+  @spec index_length(mol(k, any())) :: mol(E.count1(),k) when k: var
+  def index_length(mol) when is_mol(mol) do
+    Enum.reduce(mol, new(), fn {k, vs}, ind -> add(ind, length(vs), k) end)
+  end
 
   @doc """
   Compare two MoLs for equality, ignoring list order.
@@ -183,8 +231,8 @@ defmodule Exa.Std.Mol do
 
   If the key is missing (empty value), return `:error`.
   """
-  @spec take_hd(mol(k, v), k) :: {v, mol(k, v)} | :error when k: var, v: var
-  def take_hd(mol, k) do
+  @spec pick(mol(k, v), k) :: {v, mol(k, v)} | :error when k: var, v: var
+  def pick(mol, k) do
     case get(mol, k) do
       [] -> :error
       [h | t] -> {h, set(mol, k, t)}
