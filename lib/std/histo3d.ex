@@ -113,7 +113,7 @@ defmodule Exa.Std.Histo3D do
   def homogeneous(histo) do
     case map_size(histo) do
       0 -> :empty
-      1 -> {:homo, histo |> Map.to_list() |> hd() |> elem(0)}
+      1 -> {:homo, histo |> Enum.take(1) |> hd() |> elem(0)}
       _ -> :not_homo
     end
   end
