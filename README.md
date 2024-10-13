@@ -12,7 +12,7 @@ Module path: `Exa.Std`
 
 - Histograms for positive integer labels (IDs)
   - 1D using the Erlang `:array` module
-  - 2D, 3D sparse histograms using Elixir `Map` module
+  - Geeral, 2D, 3D sparse histograms using Elixir `Map` module
 - Run Length Encoding (RLE):
   - general for lists of any type
   - integers, using lossless binary delta-compression
