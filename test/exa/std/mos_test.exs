@@ -65,7 +65,7 @@ defmodule Exa.Std.MosTest do
   end
 
   test "pick" do
-    mos1 = new() |> set(:foo, [1, 2]) 
+    mos1 = new() |> set(:foo, [1, 2])
     {1, mos2} = pick(mos1, :foo)
     assert %{:foo => MapSet.new([2])} == mos2
     {2, mos3} = pick(mos2, :foo)

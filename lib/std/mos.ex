@@ -153,7 +153,7 @@ defmodule Exa.Std.Mos do
 
   If the MoS is empty, return the empty MoL.
   """
-  @spec index_size(Mos.mos(k, any())) :: Mos.mos(E.count1(),k) when k: var
+  @spec index_size(Mos.mos(k, any())) :: Mos.mos(E.count1(), k) when k: var
   def index_size(mos) when is_mos(mos) do
     Enum.reduce(mos, new(), fn {k, vs}, ind -> add(ind, MapSet.size(vs), k) end)
   end
@@ -304,6 +304,7 @@ defmodule Exa.Std.Mos do
   @spec pick(mos(k, v), k) :: {v, Mol.mol(k, v)} | :error when k: var, v: var
   def pick(mos, k) do
     vs = get(mos, k)
+
     if MapSet.size(vs) == 0 do
       :error
     else
@@ -342,9 +343,10 @@ defmodule Exa.Std.Mos do
   In those cases, the argument is returned unchanged.
   """
   @spec removes(mos(k, v), k, MapSet.t(v) | Enumerable.t(v)) :: mos(k, v) when k: var, v: var
-  
-  def removes(mos, k, vs) when is_mos(mos) and is_map_key(mos, k) and
-               (is_set(vs) or is_list(vs) or is_range(vs)) do
+
+  def removes(mos, k, vs)
+      when is_mos(mos) and is_map_key(mos, k) and
+             (is_set(vs) or is_list(vs) or is_range(vs)) do
     set = get(mos, k)
     col = if is_set(vs), do: vs, else: MapSet.new(vs)
     Map.put(mos, k, MapSet.difference(set, col))

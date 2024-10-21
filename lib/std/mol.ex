@@ -104,13 +104,13 @@ defmodule Exa.Std.Mol do
 
   @doc """
   Index by length.
-  
+
   Return an MoL from list length (positive integers)
   to a list of the keys that have that length.
 
   If the MoL is empty, return the empty MoL.
   """
-  @spec index_length(mol(k, any())) :: mol(E.count1(),k) when k: var
+  @spec index_length(mol(k, any())) :: mol(E.count1(), k) when k: var
   def index_length(mol) when is_mol(mol) do
     Enum.reduce(mol, new(), fn {k, vs}, ind -> add(ind, length(vs), k) end)
   end
