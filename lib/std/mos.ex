@@ -148,6 +148,7 @@ defmodule Exa.Std.Mos do
 
   @doc """
   Index by size.
+  
   Return a map of set size (non-negative integer) 
   to a list of the keys that have that size.
 
