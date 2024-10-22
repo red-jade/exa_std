@@ -53,7 +53,7 @@ defmodule Exa.Std.MosTest do
 
   test "invert" do
     mos = new() |> adds(:foo, [1, 2]) |> adds(:bar, [1, 3])
-    assert %{2 => [:bar, :foo]} == index_size(mos)
+    assert %{2 => MapSet.new([:bar, :foo])} == index_size(mos)
 
     som = invert(mos)
 
@@ -76,7 +76,7 @@ defmodule Exa.Std.MosTest do
   test "merge" do
     mos1 = new() |> adds(:foo, [1, 2]) |> adds(:bar, [4])
     mos2 = new() |> adds(:foo, [1, 3]) |> adds(:baz, [5])
-    assert %{1 => [:bar], 2 => [:foo]} == index_size(mos1)
+    assert %{1 => MapSet.new([:bar]), 2 => MapSet.new([:foo])} == index_size(mos1)
 
     mkey = merge(mos1, :foo, :bar)
 
@@ -95,7 +95,7 @@ defmodule Exa.Std.MosTest do
 
   test "involute" do
     mos = new() |> touch(2) |> touch(3) |> adds(1, [1, 3])
-    assert %{0 => [3, 2], 2 => [1]} == index_size(mos)
+    assert %{0 => MapSet.new([3, 2]), 2 => MapSet.new([1])} == index_size(mos)
 
     som = involute(mos)
     assert Map.keys(mos) == Map.keys(som)
