@@ -148,11 +148,11 @@ defmodule Exa.Std.Mos do
 
   @doc """
   Index by size.
-  
-  Return a map of set size (non-negative integer) 
-  to a list of the keys that have that size.
 
-  If the MoS is empty, return the empty MoL.
+  Return a map of set size (non-negative integer) 
+  to a set of the keys that have that size.
+
+  If the MoS is empty, return the empty MoS.
   """
   @spec index_size(Mos.mos(k, any())) :: Mos.mos(E.count1(), k) when k: var
   def index_size(mos) when is_mos(mos) do
