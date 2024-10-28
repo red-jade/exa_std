@@ -159,6 +159,24 @@ defmodule Exa.Std.Mos do
     Enum.reduce(mos, new(), fn {k, vs}, ind -> add(ind, MapSet.size(vs), k) end)
   end
 
+  @doc """
+  Test if an MoS is a disjoint partition, 
+  where all values only occur once.
+
+  The empty MoS returns `true`.
+  """
+  @spec disjoint?(Mos.mos(any(), any())) :: bool()
+  def disjoint?(mos) when is_mos(mos) do
+    union = Enum.reduce_while(mos, MapSet.new(), fn {_, vs}, set ->
+      if MapSet.disjoint?(vs, set) do
+        {:cont, MapSet.union(set, vs)}
+      else
+        {:halt, %{}}
+      end
+    end)
+    map_size(union) != 0
+  end
+
   # -------
   # updates
   # -------

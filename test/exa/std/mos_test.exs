@@ -73,6 +73,16 @@ defmodule Exa.Std.MosTest do
     assert :error = pick(mos3, :foo)
   end
 
+  test "disjoint" do
+    assert disjoint?(new())
+
+    mos1 = new() |> set(1, [1,2,3]) |> set(2, [4,5,6])
+    assert disjoint?(mos1)
+
+    mos2 = mos1 |> set(3, [1])
+    assert not disjoint?(mos2)
+  end
+
   test "merge" do
     mos1 = new() |> adds(:foo, [1, 2]) |> adds(:bar, [4])
     mos2 = new() |> adds(:foo, [1, 3]) |> adds(:baz, [5])
