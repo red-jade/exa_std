@@ -16,6 +16,9 @@ defmodule Exa.Std.Mol do
      because it adds a guard `is_list`, 
      and for symmetry with `get`
   - `flush` means delete, but returning the deleted value
+
+  A Keyword is a list, so MoL functions can be used on Map of Keywords,
+  but note the semantics of prepend/append when there are duplicate keys.
   """
 
   alias Exa.Types, as: E
