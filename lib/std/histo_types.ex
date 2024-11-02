@@ -60,6 +60,8 @@ defmodule Exa.Std.HistoTypes do
   @typedoc "A 1D histogram with a count for an index bin value."
   @type histo1d() :: :array.array(E.count())
 
+  # note :array.is_array is a function not a guard?
+
   @typedoc """
   A 2D histogram with a count for a 2D bin value.
   """

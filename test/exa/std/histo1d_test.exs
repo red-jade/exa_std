@@ -73,6 +73,32 @@ defmodule Exa.Std.Histo1DTest do
     end
   end
 
+  test "pdf cdf" do
+    h = new([0, 1, 2, 2, 0, 3, 1, 1])
+
+    pdf = pdf(h)
+    assert [0.0, 0.1, 0.2, 0.2, 0.0, 0.3, 0.1, 0.1] == pdf
+    assert 1.0 == Enum.sum(pdf)
+
+    cdf = cdf(h)
+    assert [0.0, 0.1, 0.3, 0.5, 0.5, 0.8, 0.9, 1.0] == cdf
+
+    # all zero means empty
+    h0 = new([0, 0, 0, 0, 0])
+    assert [] == pdf(h0)
+    assert [] == cdf(h0)
+
+    # -ve count
+    hneg = new([0, 0, 1, 1]) |> dec(1)
+    assert [0.0, -1.0, 1.0, 1.0] == pdf(hneg)
+    assert [0.0, -1.0, 0.0, 1.0] == cdf(hneg)
+
+    # zero total count for non-empty 
+    hneg = dec(hneg, 2)
+    assert_raise ArgumentError, fn -> pdf(hneg) end
+    assert_raise ArgumentError, fn -> cdf(hneg) end
+  end
+
   test "crop" do
     # raise RuntimeError, message: "TODO"
   end

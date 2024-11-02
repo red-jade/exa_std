@@ -19,8 +19,8 @@ defmodule Exa.Std.Histo1D do
   In principle, the minimum count should be 0,
   but in practice, there may be reasons 
   why changes come in out-of-order.
-  So counts may be temporarily below 0, 
-  but will be eventually consistent with 0.
+  So counts are allowed to be below 0 temporarily, 
+  but should be eventually consistent with 0.
 
   This implementation uses `:erlang.array`.
   """
@@ -59,8 +59,8 @@ defmodule Exa.Std.Histo1D do
   end
 
   def new(counts) when is_list(counts) do
-    if Enum.any?(counts, fn x -> not (is_integer(x) and x >= 0) end) do
-      msg = "Counts must be non-negative integers, found #{counts}"
+    if Enum.any?(counts, fn x -> not is_int_nonneg(x) end) do
+      msg = "Counts must be non-negative integers, found #{inspect(counts)}"
       Logger.error(msg)
       raise ArgumentError, message: msg
     end
@@ -91,9 +91,7 @@ defmodule Exa.Std.Histo1D do
   def dec(histo, i) when is_hval(i) do
     count = get(histo, i)
 
-    if count <= 0 do
-      Logger.info("Negative count for value #{}i}")
-    end
+    if count <= 0, do: Logger.info("Negative count for value #{i}")
 
     set(histo, i, count - 1)
   end
@@ -104,6 +102,7 @@ defmodule Exa.Std.Histo1D do
   The total count remains the same.
 
   Decrement the count for the current value.
+
   Increment the count for the new higher value.
   """
   @spec add(H.histo1d(), H.hvalue()) :: H.histo1d()
@@ -115,6 +114,7 @@ defmodule Exa.Std.Histo1D do
   The total count remains the same.
 
   Decrement the count for the current value.
+
   Increment the count for the new lower value.
   """
   @spec sub(H.histo1d(), H.hvalue()) :: H.histo1d()
@@ -208,6 +208,83 @@ defmodule Exa.Std.Histo1D do
       i - 1 + (p50 - acc) / n
     else
       cumulative(histo, p50, i + 1, new_acc)
+    end
+  end
+
+  @doc """
+  Convert to a Probability Density Function (PDF).
+
+  Normalize the probabilities 
+  by dividing the individual counts by the total count.
+
+  The result is a dense (complete) list of probability values,
+  with elements for all bins from 0 to the maximum non-zero count.
+
+  The probabilities are typically in the range 0.0-1.0, 
+  but may contain negative values if there have been out-of-order updates.
+
+  Returns the empty list if the size is 0.
+
+  Raises if the total count is zero for a non-empty histogram
+  (i.e. contains negative counts that balance positive counts).
+  """
+  @spec pdf(H.histo1d()) :: [float()]
+  def pdf(histo) do
+    case {size(histo), total_count(histo)} do
+      {0, 0} ->
+        []
+
+      {_, 0} ->
+        msg = "Zero total count for non-empty histogram"
+        Logger.error(msg)
+        raise ArgumentError, message: msg
+
+      {_, n} ->
+        histo |> to_list() |> Enum.map(fn i -> i / n end)
+    end
+  end
+
+  @doc """
+  Convert to a Cumulative Density Function (CDF).
+
+  Calculate a running total of counts and 
+  normalize to probabilities by dividing by the total count.
+
+  The result is a dense (complete) list of probability values,
+  with elements for all bins from 0 to the maximum non-zero count.
+
+  The probability values are monotonically flat or increasing.
+  The final value should be 1.0.
+
+  The probabilities are typically in the range 0.0-1.0, 
+  but may contain negative values if there have been out-of-order updates.
+
+  Returns the empty list if the size is 0.
+
+  Raises if the total count is zero for a non-empty histogram
+  (i.e. contains negative counts that balance positive counts).
+  """
+  @spec cdf(H.histo1d()) :: [float()]
+  def cdf(histo) do
+    case {size(histo), total_count(histo)} do
+      {0, 0} ->
+        []
+
+      {_, 0} ->
+        msg = "Zero total count for non-empty histogram"
+        Logger.error(msg)
+        raise ArgumentError, message: msg
+
+      {_, n} ->
+        {^n, cdf} =
+          histo
+          |> to_list()
+          |> Enum.reduce({0, []}, fn i, {s, cdf} ->
+            s = s + i
+            {s, [s / n | cdf]}
+          end)
+
+        Enum.reverse(cdf)
     end
   end
 
