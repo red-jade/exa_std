@@ -76,7 +76,7 @@ defmodule Exa.Std.MosTest do
   test "disjoint" do
     assert disjoint?(new())
 
-    mos1 = new() |> set(1, [1,2,3]) |> set(2, [4,5,6])
+    mos1 = new() |> set(1, [1, 2, 3]) |> set(2, [4, 5, 6])
     assert disjoint?(mos1)
 
     mos2 = mos1 |> set(3, [1])

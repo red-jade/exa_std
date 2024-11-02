@@ -167,13 +167,15 @@ defmodule Exa.Std.Mos do
   """
   @spec disjoint?(Mos.mos(any(), any())) :: bool()
   def disjoint?(mos) when is_mos(mos) do
-    union = Enum.reduce_while(mos, MapSet.new(), fn {_, vs}, set ->
-      if MapSet.disjoint?(vs, set) do
-        {:cont, MapSet.union(set, vs)}
-      else
-        {:halt, %{}}
-      end
-    end)
+    union =
+      Enum.reduce_while(mos, MapSet.new(), fn {_, vs}, set ->
+        if MapSet.disjoint?(vs, set) do
+          {:cont, MapSet.union(set, vs)}
+        else
+          {:halt, %{}}
+        end
+      end)
+
     map_size(union) != 0
   end
 
