@@ -50,7 +50,8 @@ defmodule Exa.Std.Histo1D do
   Passing a single integer sets the initial size.
 
   Passing a list of integers sets them as the counts,
-  starting at index 0.
+  starting at index 0. Counts must be non-negative.
+  Raises error if any counts are negative.
   """
   @spec new(pos_integer() | [E.count(), ...]) :: H.histo1d()
 
@@ -60,7 +61,7 @@ defmodule Exa.Std.Histo1D do
 
   def new(counts) when is_list(counts) do
     if Enum.any?(counts, fn x -> not is_int_nonneg(x) end) do
-      msg = "Counts must be non-negative integers, found #{inspect(counts)}"
+      msg = "Negative count: #{inspect(counts)}"
       Logger.error(msg)
       raise ArgumentError, message: msg
     end
@@ -184,6 +185,7 @@ defmodule Exa.Std.Histo1D do
 
   @doc """
   Mean of the values.
+  The total value divided by the total count.
   """
   @spec mean(H.histo1d()) :: float()
   def mean(histo), do: total_value(histo) / total_count(histo)
@@ -191,25 +193,31 @@ defmodule Exa.Std.Histo1D do
   @doc """
   Median of the values.
 
-  The result is interpolated across the bin 
-  that pushes the cumulative count above the 50% level.
-  So the result is a fractional value.
+  The value depends on the total count:
+  - odd: return the index of the bin containing the central value
+  - even: average the two bins containing the two central values
+    (which could be the same bin)
+
+  Returns error if the histogram is empty, or has negative total count.
   """
-  @spec median(H.histo1d()) :: float()
-  def median(histo), do: cumulative(histo, total_count(histo) / 2, 0, 0)
-
-  # progressive scan looking for total above 50% level
-  @spec cumulative(H.histo1d(), float(), H.hvalue(), E.count()) :: float()
-  defp cumulative(histo, p50, i, acc) do
-    n = get(histo, i)
-    new_acc = acc + n
-
-    if new_acc >= p50 do
-      i - 1 + (p50 - acc) / n
-    else
-      cumulative(histo, p50, i + 1, new_acc)
+  @spec median(H.histo1d()) :: number() | {:error, any()}
+  def median(histo) do
+    case {size(histo), total_count(histo)} do
+      {0, 0} -> {:error, "Empty histogram"}
+      {_, n} when n < 0 -> {:error, "Negative total count"}
+      {_, n} when is_int_even(n) -> meven(histo, 0, div(n, 2), 0)
+      {_, n} when is_int_odd(n) -> modd(histo, 0, div(n, 2) + 1, 0)
     end
   end
+
+  defp meven(h, i, m, s) when s < m, do: meven(h, i + 1, m, s + get(h, i))
+  defp meven(h, i, m, s) when s == m, do: (i - 1 + mnext(h, i)) / 2
+  defp meven(_h, i, m, s) when s > m, do: i - 1
+
+  defp mnext(h, i), do: if(get(h, i) > 0, do: i, else: mnext(h, i + 1))
+
+  defp modd(h, i, m, s) when s < m, do: modd(h, i + 1, m, s + get(h, i))
+  defp modd(_h, i, _m, _s), do: i - 1
 
   @doc """
   Convert to a Probability Density Function (PDF).
@@ -225,22 +233,15 @@ defmodule Exa.Std.Histo1D do
 
   Returns the empty list if the size is 0.
 
-  Raises if the total count is zero for a non-empty histogram
+  Returns error if the total count is zero for a non-empty histogram
   (i.e. contains negative counts that balance positive counts).
   """
-  @spec pdf(H.histo1d()) :: [float()]
+  @spec pdf(H.histo1d()) :: [float()] | {:error, any()}
   def pdf(histo) do
     case {size(histo), total_count(histo)} do
-      {0, 0} ->
-        []
-
-      {_, 0} ->
-        msg = "Zero total count for non-empty histogram"
-        Logger.error(msg)
-        raise ArgumentError, message: msg
-
-      {_, n} ->
-        histo |> to_list() |> Enum.map(fn i -> i / n end)
+      {0, 0} -> []
+      {_, 0} -> {:error, "Zero total count for non-empty histogram"}
+      {_, n} -> histo |> to_list() |> Enum.map(fn i -> i / n end)
     end
   end
 
@@ -261,19 +262,17 @@ defmodule Exa.Std.Histo1D do
 
   Returns the empty list if the size is 0.
 
-  Raises if the total count is zero for a non-empty histogram
+  Returns error if the total count is zero for a non-empty histogram
   (i.e. contains negative counts that balance positive counts).
   """
-  @spec cdf(H.histo1d()) :: [float()]
+  @spec cdf(H.histo1d()) :: [float()] | {:error, any()}
   def cdf(histo) do
     case {size(histo), total_count(histo)} do
       {0, 0} ->
         []
 
       {_, 0} ->
-        msg = "Zero total count for non-empty histogram"
-        Logger.error(msg)
-        raise ArgumentError, message: msg
+        {:error, "Zero total count for non-empty histogram"}
 
       {_, n} ->
         {^n, cdf} =

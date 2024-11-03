@@ -10,27 +10,27 @@ defmodule Exa.Std.Histo1DTest do
 
     h = inc(h, 5)
     assert_bins(h, [0, 0, 0, 0, 0, 1])
-    assert_mean_median(h, 5.0, 4.5)
+    assert_mean_median(h, 5.0, 5)
     assert {:homo, 5} = homogeneous(h)
 
     h = h |> inc(1) |> inc(2) |> inc(3) |> inc(4)
     assert_bins(h, [0, 1, 1, 1, 1, 1])
-    assert_mean_median(h, 3.0, 2.5)
+    assert_mean_median(h, 3.0, 3)
     assert :not_homo = homogeneous(h)
 
     h = h |> inc(2) |> inc(3) |> inc(4)
     assert_bins(h, [0, 1, 2, 2, 2, 1])
-    assert_mean_median(h, 3.0, 2.5)
+    assert_mean_median(h, 3.0, 3)
     assert :not_homo = homogeneous(h)
 
     h = h |> inc(3) |> inc(4)
     assert_bins(h, [0, 1, 2, 3, 3, 1])
-    assert_mean_median(h, 3.1, 2 + 2 / 3)
+    assert_mean_median(h, 3.1, 3)
     assert :not_homo = homogeneous(h)
 
     h = h |> inc(4)
     assert_bins(h, [0, 1, 2, 3, 4, 1])
-    assert_mean_median(h, 35 / 11, 2 + 2.5 / 3)
+    assert_mean_median(h, 35 / 11, 3)
     assert :not_homo = homogeneous(h)
 
     # 0 + 1 + 2 + 3 + 4 + 1 = 11
@@ -46,6 +46,24 @@ defmodule Exa.Std.Histo1DTest do
     # assert_raise RuntimeError, "Histogram: cannot decrement 0 count at index 0", fn ->
     #   dec(h, 0)
     # end
+  end
+
+  test "median" do
+    # odds
+    assert 0 == [5] |> new() |> median()
+    assert 2 == [0, 0, 1] |> new() |> median()
+    assert 2 == [1, 2, 3, 2, 1] |> new() |> median()
+    assert 3 == [0, 0, 2, 1, 2] |> new() |> median()
+
+    # evens
+    assert 0.5 == [1, 1] |> new() |> median()
+    assert 1.0 == [1, 0, 1] |> new() |> median()
+    assert 1.5 == [1, 2, 3] |> new() |> median()
+    assert 2.5 == [1, 2, 0, 0, 3] |> new() |> median()
+    assert 3.0 == [0, 1, 2, 2, 2, 1] |> new() |> median()
+
+    assert {:error, _} = new([]) |> median()
+    assert {:error, _} = new([0, 0, 0, 0]) |> median()
   end
 
   test "roundtrip" do
@@ -95,8 +113,8 @@ defmodule Exa.Std.Histo1DTest do
 
     # zero total count for non-empty 
     hneg = dec(hneg, 2)
-    assert_raise ArgumentError, fn -> pdf(hneg) end
-    assert_raise ArgumentError, fn -> cdf(hneg) end
+    assert {:error, _} = pdf(hneg) 
+    assert {:error, _} = cdf(hneg) 
   end
 
   test "crop" do
