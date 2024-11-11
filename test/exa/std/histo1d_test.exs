@@ -113,8 +113,8 @@ defmodule Exa.Std.Histo1DTest do
 
     # zero total count for non-empty 
     hneg = dec(hneg, 2)
-    assert {:error, _} = pdf(hneg) 
-    assert {:error, _} = cdf(hneg) 
+    assert {:error, _} = pdf(hneg)
+    assert {:error, _} = cdf(hneg)
   end
 
   test "crop" do
