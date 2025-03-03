@@ -130,12 +130,23 @@ defmodule Exa.Std.Mos do
   def size(mos, _, default) when is_mos(mos), do: default
 
   @doc """
-  Get the total size of all the sets,
-  hence the total number of values.
+  Get the total size of all the sets.
+
+  If all the sets are disjoint, 
+  then it will also be the total number of unique values.
   """
   @spec sizes(mos(key(), any())) :: E.count()
   def sizes(mos) when is_mos(mos) do
     Enum.reduce(mos, 0, fn {_, vs}, n -> n + MapSet.size(vs) end)
+  end
+
+  @doc """
+  Get the total number of unique values,
+  which is the size of the union of all sets.
+  """
+  @spec sizes_unique(mos(key(), any())) :: E.count()
+  def sizes_unique(mos) when is_mos(mos) do
+    mos |> union_values() |> MapSet.size()
   end
 
   @doc "Get the union of all the sets."
