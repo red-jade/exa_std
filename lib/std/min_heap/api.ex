@@ -7,12 +7,15 @@ defmodule Exa.Std.MinHeap.Api do
 
   alias Exa.Types, as: E
 
+  # implementation module tag for dispatching 
+  @typep tag() :: :mh_map | :mh_ord 
+
   @type key() :: any()
-  @type val() :: any()
-  @type minheap() :: any()
+  @type val() :: :inf | number()
+  @type minheap() :: {tag(), any()}
 
   @doc "Create a new heap."
-  @callback new() :: minheap()
+  @callback new(tag()) :: minheap()
 
   @doc "Get the number of entries in the heap."
   @callback size(minheap()) :: E.count()

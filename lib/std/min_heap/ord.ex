@@ -15,22 +15,22 @@ defmodule Exa.Std.MinHeap.Ord do
   @behaviour Exa.Std.MinHeap.Api
 
   @impl true
-  def new(), do: []
+  def new(:mh_ord), do: {:mh_ord, []}
 
   # O(n)
   @impl true
-  def has_key?(ord, key) do
+  def has_key?({:mh_ord, ord}, key) do
     Enum.find_value(ord, false, fn {_v, k} -> k == key end)
   end
 
   # O(n)
   @impl true
-  def size(ord), do: length(ord)
+  def size({:mh_ord, ord}), do: length(ord)
 
   # O(n)
   @impl true
-  def fetch!(ord, k) do
-    case get(ord, k) do
+  def fetch!({:mh_ord, _}=heap, k) do
+    case get(heap, k) do
       nil -> raise ArgumentError, message: "Heap missing key '#{k}'"
       v -> v
     end
@@ -38,7 +38,7 @@ defmodule Exa.Std.MinHeap.Ord do
 
   # O(n)
   @impl true
-  def get(ord, key, default \\ nil) do
+  def get({:mh_ord, ord}, key, default \\ nil) do
     Enum.find_value(ord, default, fn
       {v, ^key} -> v
       _ -> false
@@ -47,7 +47,7 @@ defmodule Exa.Std.MinHeap.Ord do
 
   # O(n)
   @impl true
-  def delete(ord, k), do: do_del(ord, k, [])
+  def delete({:mh_ord, ord}, k), do: {:mh_ord, do_del(ord, k, [])}
 
   defp do_del([{_, k} | t], k, acc), do: Enum.reverse(acc, t)
   defp do_del([vk | t], k, acc), do: do_del(t, k, [vk | acc])
@@ -55,18 +55,18 @@ defmodule Exa.Std.MinHeap.Ord do
 
   # O(1)
   @impl true
-  def peek([]), do: :empty
-  def peek([{v, k} | _]), do: {k, v}
+  def peek({:mh_ord, []}), do: :empty
+  def peek({:mh_ord, [{v, k} | _]}), do: {k, v}
 
   # O(1)
   @impl true
-  def pop([]), do: :empty
-  def pop([{v, k} | t]), do: {{k, v}, t}
+  def pop({:mh_ord,[]}), do: :empty
+  def pop({:mh_ord, [{v, k} | t]}), do: {{k, v}, {:mh_ord, t}}
 
   # O(n)
   @impl true
-  def push([], k, v), do: [{v, k}]
-  def push(ord, k, v), do: do_push(ord, k, v, [], false)
+  def push({:mh_ord, []}, k, v), do: {:mh_ord, [{v, k}]}
+  def push({:mh_ord, ord}, k, v), do: {:mh_ord, do_push(ord, k, v, [], false)}
 
   # push is equivalent to 'delete' followed by 'add'
   # combine insert with delete or overwrite previous value
