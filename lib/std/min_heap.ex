@@ -14,6 +14,8 @@ defmodule Exa.Std.MinHeap do
 
   import Exa.Dispatch, only: [dispatch: 4, dispatch: 3]
 
+  alias Exa.Std.MinHeap.Api, as: API
+
   alias Exa.Std.MinHeap.Map
   alias Exa.Std.MinHeap.Ord
 
@@ -32,9 +34,6 @@ defmodule Exa.Std.MinHeap do
   def has_key?(heap, k), do: dispatch(@disp, heap, :has_key?, [k])
 
   @impl true
-  def fetch!(heap, k), do: dispatch(@disp, heap, :fetch!, [k])
-
-  @impl true
   def get(heap, k, default \\ nil)
   def get(heap, k, default), do: dispatch(@disp, heap, :get, [k, default])
 
@@ -49,4 +48,15 @@ defmodule Exa.Std.MinHeap do
 
   @impl true
   def pop(heap), do: dispatch(@disp, heap, :pop)
+
+  # utility functions layered over the API
+
+  @doc "Get the value for a key, or raise if the key does not exist."
+  @spec fetch!(API.minheap(), API.key()) :: API.val()
+  def fetch!(heap, k) do
+    case get(heap, k, :empty) do
+      :empty -> raise(ArgumentError, message: "Heap missing key '#{k}'")
+      v -> v
+    end
+  end
 end

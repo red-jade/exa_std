@@ -24,11 +24,6 @@ defmodule Exa.Std.MinHeap.Map do
 
   # O(1)
   @impl true
-  def fetch!({:mh_map, {_, map}}, k) when is_map_key(map, k), do: map[k]
-  def fetch!(_heap, k), do: raise(ArgumentError, message: "Heap missing key '#{k}'")
-
-  # O(1)
-  @impl true
   def get(heap, k, default \\ nil)
   def get({:mh_map, {_, map}}, k, _default) when is_map_key(map, k), do: map[k]
   def get(_, _k, default), do: default

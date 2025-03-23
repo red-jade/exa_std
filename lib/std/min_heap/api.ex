@@ -7,12 +7,26 @@ defmodule Exa.Std.MinHeap.Api do
 
   alias Exa.Types, as: E
 
+  # -----
+  # types
+  # -----
+
   # implementation module tag for dispatching 
   @typep tag() :: :mh_map | :mh_ord 
 
+  # keys can be anything, but will usually be non-negative integers
   @type key() :: any()
+
+  # note that all numbers sort less than atoms, so x < :inf
   @type val() :: :inf | number()
+
+  # min heap is a tagged tuple
+  # different implementations will have different internal representations
   @type minheap() :: {tag(), any()}
+
+  # ---------
+  # behaviour
+  # ---------
 
   @doc "Create a new heap."
   @callback new(tag()) :: minheap()
@@ -22,9 +36,6 @@ defmodule Exa.Std.MinHeap.Api do
 
   @doc "Test if the heap has the given key."
   @callback has_key?(minheap(), key()) :: bool()
-
-  @doc "Get the value for a key, or raise if the key does not exist."
-  @callback fetch!(minheap(), key()) :: val()
 
   @doc "Get the value for a key, or return default if the key does not exist."
   @callback get(minheap(), key(), t) :: val() | t when t: var

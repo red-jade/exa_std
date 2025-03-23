@@ -29,15 +29,6 @@ defmodule Exa.Std.MinHeap.Ord do
 
   # O(n)
   @impl true
-  def fetch!({:mh_ord, _}=heap, k) do
-    case get(heap, k) do
-      nil -> raise ArgumentError, message: "Heap missing key '#{k}'"
-      v -> v
-    end
-  end
-
-  # O(n)
-  @impl true
   def get({:mh_ord, ord}, key, default \\ nil) do
     Enum.find_value(ord, default, fn
       {v, ^key} -> v
