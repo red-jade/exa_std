@@ -9,55 +9,74 @@ defmodule Exa.Std.MinHeap.Map do
   All functions are O(1) except `pop/1` and `delete/2`, which are O(n).
   """
 
-  @behaviour Exa.Std.MinHeap.Api
+  defmodule MHMap do
+    alias Exa.Std.MinHeap, as: API
 
-  @impl true
-  def new(:mh_map), do: {:mh_map, {nil, %{}}}
+    defstruct [
+      kmin: nil,
+      map: %{},
+    ]
+
+    @type t :: %__MODULE__{ 
+      kmin: API.key(),
+      map: %{API.key() => API.val()}
+    }
+  end
 
   # O(1)
-  @impl true
-  def size({:mh_map, {_, map}}), do: map_size(map)
+  def new(), do: %MHMap{}
+
+  # --------
+  # protocol
+  # --------
+
+  defimpl Exa.Std.MinHeap, for: MHMap do
 
   # O(1)
-  @impl true
-  def has_key?({:mh_map, {_, map}}, k), do: is_map_key(map, k)
+  def size(%MHMap{map: map}), do: map_size(map)
 
   # O(1)
-  @impl true
+  def has_key?(%MHMap{map: map}, k), do: is_map_key(map, k)
+
+  # O(1)
   def get(heap, k, default \\ nil)
-  def get({:mh_map, {_, map}}, k, _default) when is_map_key(map, k), do: map[k]
+  def get(%MHMap{map: map}, k, _default) when is_map_key(map, k), do: map[k]
   def get(_, _k, default), do: default
 
   # O(n)
-  @impl true
-  def delete({:mh_map, {_, map}} = heap, k) when not is_map_key(map, k), do: heap
-  def delete({:mh_map, {kmin, _map}} = heap, kmin), do: heap |> pop() |> elem(1)
-  def delete({:mh_map, {kmin, map}}, k), do: {:mh_map, {kmin, Map.delete(map, k)}}
+  def fetch!(heap, k) do
+    case get(heap, k, :empty) do
+      :empty -> raise(ArgumentError, message: "Heap missing key '#{k}'")
+      v -> v
+    end
+  end
+
+  # O(1) for most keys; O(n) for deleting min key
+  def delete(%MHMap{map: map} = heap, k) when not is_map_key(map, k), do: heap
+  def delete(%MHMap{kmin: kmin} = heap, kmin), do: heap |> pop() |> elem(1)
+  def delete(%MHMap{kmin: kmin, map: map}, k), do: %MHMap{kmin: kmin, map: Map.delete(map, k)}
 
   # O(1)
-  @impl true
-  def peek({:mh_map, {nil, %{}}}), do: :empty
-  def peek({:mh_map, {kmin, map}}), do: {kmin, map[kmin]}
+  def peek(%MHMap{kmin: nil, map: %{}}), do: :empty
+  def peek(%MHMap{kmin: kmin, map: map}), do: {kmin, map[kmin]}
 
   # O(1)
-  @impl true
 
-  def push({:mh_map, {nil, %{}}}, k, v), do: {:mh_map, {k, %{k => v}}}
+  def push(%MHMap{kmin: nil, map: %{}}, k, v), do: %MHMap{kmin: k, map: %{k => v}}
 
-  def push({:mh_map, {kmin, map}} = heap, k, v) do
+  def push(%MHMap{kmin: kmin, map: map} = heap, k, v) do
     cond do
       is_map_key(map, k) and v >= map[k] -> heap
-      v < map[kmin] -> {:mh_map, {k,    Map.put(map, k, v)}}
-      true ->          {:mh_map, {kmin, Map.put(map, k, v)}}
+      v < map[kmin] -> %MHMap{kmin: k,    map: Map.put(map, k, v)}
+      true ->          %MHMap{kmin: kmin, map: Map.put(map, k, v)}
     end
   end
 
   # O(n)
-  @impl true
 
-  def pop({:mh_map, {nil, %{}}}), do: :empty
+  def pop(%MHMap{kmin: nil, map: %{}}), do: :empty
 
-  def pop({:mh_map, {kmin, map}}) do
+  def pop(%MHMap{kmin: kmin, map: map}) do
     {vmin, new_map} = Map.pop!(map, kmin)
 
     new_kmin =
@@ -73,6 +92,7 @@ defmodule Exa.Std.MinHeap.Map do
           |> elem(0)
       end
 
-    {{kmin, vmin}, {:mh_map, {new_kmin, new_map}}}
+    {{kmin, vmin}, %MHMap{kmin: new_kmin, map: new_map}}
   end
+end
 end

@@ -3,15 +3,15 @@ defmodule Exa.Std.MinHeapTest do
 
   alias Exa.Std.MinHeap
 
-  @impls [:mh_map, :mh_ord]
+  @impls [Exa.Std.MinHeap.Map, Exa.Std.MinHeap.Ord]
 
   test "simple" do
-    for tag <- @impls, do: simple(tag)
+    for mod <- @impls, do: simple(mod)
   end
 
-  defp simple(tag) do
+  defp simple(mod) do
     heap =
-      MinHeap.new(tag) 
+      mod.new() 
       |> MinHeap.push(1, 43)
       |> MinHeap.push(2, 16)
       |> MinHeap.push(1, 24)
@@ -23,8 +23,8 @@ defmodule Exa.Std.MinHeapTest do
     assert 16 = MinHeap.get(heap, 2)
     assert 10 = MinHeap.fetch!(heap, 1)
 
-    assert MinHeap.new(tag) |> MinHeap.push(1, 10) == MinHeap.delete(heap, 2)
-    assert MinHeap.new(tag) |> MinHeap.push(2, 16) == MinHeap.delete(heap, 1)
+    assert mod.new() |> MinHeap.push(1, 10) == MinHeap.delete(heap, 2)
+    assert mod.new() |> MinHeap.push(2, 16) == MinHeap.delete(heap, 1)
 
     assert :error == MinHeap.get(heap, 99, :error)
     assert_raise ArgumentError, fn -> MinHeap.fetch!(heap, 99) end
@@ -32,12 +32,12 @@ defmodule Exa.Std.MinHeapTest do
     assert {1, 10} == MinHeap.peek(heap)
     {min, heap} = MinHeap.pop(heap)
     assert {1, 10} == min
-    assert MinHeap.new(tag) |> MinHeap.push(2, 16) == heap
+    assert mod.new() |> MinHeap.push(2, 16) == heap
 
     assert {2, 16} == MinHeap.peek(heap)
     {min, heap} = MinHeap.pop(heap)
     assert {2, 16} == min
-    assert MinHeap.new(tag) == heap
+    assert mod.new() == heap
 
     assert :empty = MinHeap.peek(heap)
   end

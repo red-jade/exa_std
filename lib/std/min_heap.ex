@@ -1,62 +1,73 @@
-defmodule Exa.Std.MinHeap do
+defprotocol Exa.Std.MinHeap do
   @moduledoc """
-  A minimum heap sorted data structure.
+  A protocol for minimum heap data structure.
 
-  There is a common behavior API: `Exa.Std.MinHeap.Api`
-
-  There are two concrete implementations:
-  - map `Exa.Std.MinHeap.Map` using map data structure
-  - ord `Exa.Std.MinHeap.Ord` using ordered list data structure
-
-  The implementation is chosen in the call to `new/1`,
-  then subsequent operations are dispatched to the correct module.
+  The entries are key-value pairs sorted by value.
   """
 
-  import Exa.Dispatch, only: [dispatch: 4, dispatch: 3]
+  alias Exa.Types, as: E
 
-  alias Exa.Std.MinHeap.Api, as: API
+  # -----
+  # types
+  # -----
 
-  alias Exa.Std.MinHeap.Map
-  alias Exa.Std.MinHeap.Ord
+  # keys can be anything, but will usually be non-negative integers
+  @type key() :: any()
 
-  # dispatch map from tag to implementation module
-  @disp %{:mh_map => Map, :mh_ord => Ord}
+  # note that all numbers sort less than atoms, so x < :inf
+  @type val() :: number() | :inf
 
-  @behaviour Exa.Std.MinHeap.Api
+  # min heap is any struct that implements the protocol
+  @type minheap() :: map()
 
-  @impl true
-  def new(tag \\ :mh_map), do: dispatch(@disp, tag, :new)
+  # --------
+  # protocol
+  # --------
 
-  @impl true
-  def size(heap), do: dispatch(@disp, heap, :size)
+  @doc "Get the number of entries in the heap."
+  @spec  size(minheap()) :: E.count()
+  def size(heap)
 
-  @impl true
-  def has_key?(heap, k), do: dispatch(@disp, heap, :has_key?, [k])
+  @doc "Test if the heap has the given key."
+  @spec  has_key?(minheap(), key()) :: bool()
+  def has_key?(heap, k)
 
-  @impl true
+  @doc "Get the value for a key, or return default if the key does not exist."
+  @spec  get(minheap(), key(), t) :: val() | t when t: var
   def get(heap, k, default \\ nil)
-  def get(heap, k, default), do: dispatch(@disp, heap, :get, [k, default])
-
-  @impl true
-  def delete(heap, k), do: dispatch(@disp, heap, :delete, [k])
-
-  @impl true
-  def peek(heap), do: dispatch(@disp, heap, :peek)
-
-  @impl true
-  def push(heap, k, v), do: dispatch(@disp, heap, :push, [k, v])
-
-  @impl true
-  def pop(heap), do: dispatch(@disp, heap, :pop)
-
-  # utility functions layered over the API
 
   @doc "Get the value for a key, or raise if the key does not exist."
-  @spec fetch!(API.minheap(), API.key()) :: API.val()
-  def fetch!(heap, k) do
-    case get(heap, k, :empty) do
-      :empty -> raise(ArgumentError, message: "Heap missing key '#{k}'")
-      v -> v
-    end
-  end
+  @spec fetch!(minheap(), key()) :: val()
+  def fetch!(heap, k)
+
+  @doc """
+  Delete a key from the heap.   
+  The minimum entry may change.
+  """
+  @spec  delete(minheap(), key()) :: minheap()
+  def delete(heap, k)
+
+  @doc """
+  Get the current minimum key-value entry.
+  The heap is not modified.
+  If the heap does not have any entries, return `:empty`.
+  """
+  @spec  peek(minheap()) :: :empty | {key(), val()}
+  def peek(heap)
+
+  @doc """
+  Put a new key-value entry into the heap.
+  If the key already exists in the heap, its value is updated.
+  The minimum entry may change.
+  """
+  @spec  push(minheap(), key(), val()) :: minheap()
+  def push(heap, k, v)
+
+  @doc """
+  Pop the current minimum key-value entry off the heap.
+  Return the minimum entry and the modified heap.
+  If the heap does not have any entries, return `:empty`.
+  """
+  @spec  pop(minheap()) :: :empty | {{key(), val()}, minheap()}
+  def pop(heap)
 end

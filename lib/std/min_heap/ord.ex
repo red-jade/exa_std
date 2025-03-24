@@ -7,29 +7,41 @@ defmodule Exa.Std.MinHeap.Ord do
   so the term order is the value order.
 
   If there are multiple keys with the same value,
-  their ordering is arbitrary.
+  their order will be by key (ascending).
 
   All functions are O(n) except `push` and `delete`, which are O(1).
   """
 
-  @behaviour Exa.Std.MinHeap.Api
+  defmodule MHOrd do
+    defstruct [
+      ord: []
+    ]
 
-  @impl true
-  def new(:mh_ord), do: {:mh_ord, []}
+    @type t :: %__MODULE__{ 
+      ord: list()
+    }
+  end
+
+  # O(1)
+  def new(), do: %MHOrd{}
+
+  # --------
+  # protocol
+  # --------
+
+  defimpl Exa.Std.MinHeap, for: MHOrd do
 
   # O(n)
-  @impl true
-  def has_key?({:mh_ord, ord}, key) do
-    Enum.find_value(ord, false, fn {_v, k} -> k == key end)
+  def has_key?(%MHOrd{ord: ord}=heap, key) do
+    new_ord = Enum.find_value(ord, false, fn {_v, k} -> k == key end)
+    %{heap|ord: new_ord}
   end
 
   # O(n)
-  @impl true
-  def size({:mh_ord, ord}), do: length(ord)
+  def size(%MHOrd{ord: ord}), do: length(ord)
 
   # O(n)
-  @impl true
-  def get({:mh_ord, ord}, key, default \\ nil) do
+  def get(%MHOrd{ord: ord}, key, default \\ nil) do
     Enum.find_value(ord, default, fn
       {v, ^key} -> v
       _ -> false
@@ -37,27 +49,31 @@ defmodule Exa.Std.MinHeap.Ord do
   end
 
   # O(n)
-  @impl true
-  def delete({:mh_ord, ord}, k), do: {:mh_ord, do_del(ord, k, [])}
+  def fetch!(heap, k) do
+    case get(heap, k, :empty) do
+      :empty -> raise(ArgumentError, message: "Heap missing key '#{k}'")
+      v -> v
+    end
+  end
+
+  # O(n)
+  def delete(%MHOrd{ord: ord}=heap, k), do: %{heap| ord: do_del(ord, k, [])}
 
   defp do_del([{_, k} | t], k, acc), do: Enum.reverse(acc, t)
   defp do_del([vk | t], k, acc), do: do_del(t, k, [vk | acc])
   defp do_del([], _, acc), do: Enum.reverse(acc)
 
   # O(1)
-  @impl true
-  def peek({:mh_ord, []}), do: :empty
-  def peek({:mh_ord, [{v, k} | _]}), do: {k, v}
+  def peek(%MHOrd{ord: []}), do: :empty
+  def peek(%MHOrd{ord: [{v, k} | _]}), do: {k, v}
 
   # O(1)
-  @impl true
-  def pop({:mh_ord,[]}), do: :empty
-  def pop({:mh_ord, [{v, k} | t]}), do: {{k, v}, {:mh_ord, t}}
+  def pop(%MHOrd{ord: []}), do: :empty
+  def pop(%MHOrd{ord: [{v, k} | t]}), do: {{k, v}, %MHOrd{ord: t}}
 
   # O(n)
-  @impl true
-  def push({:mh_ord, []}, k, v), do: {:mh_ord, [{v, k}]}
-  def push({:mh_ord, ord}, k, v), do: {:mh_ord, do_push(ord, k, v, [], false)}
+  def push(%MHOrd{ord: []}, k, v), do: %MHOrd{ord: [{v, k}]}
+  def push(%MHOrd{ord: ord}, k, v), do: %MHOrd{ord: do_push(ord, k, v, [], false)}
 
   # push is equivalent to 'delete' followed by 'add'
   # combine insert with delete or overwrite previous value
@@ -96,4 +112,5 @@ defmodule Exa.Std.MinHeap.Ord do
     do: Enum.reverse(acc, [{v, k}, uj | t])
 
   defp do_push([], _, _, acc, _), do: Enum.reverse(acc) 
+end
 end
