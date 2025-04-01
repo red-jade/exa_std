@@ -2,7 +2,8 @@ defprotocol Exa.Std.MinHeap do
   @moduledoc """
   A protocol for minimum heap data structure.
 
-  The entries are key-value pairs sorted by value.
+  The entries are key-value pairs sorted by numerical value,
+  so the heap is a minimum sorted map.
   """
 
   alias Exa.Types, as: E
@@ -25,15 +26,15 @@ defprotocol Exa.Std.MinHeap do
   # --------
 
   @doc "Get the number of entries in the heap."
-  @spec  size(minheap()) :: E.count()
+  @spec size(minheap()) :: E.count()
   def size(heap)
 
   @doc "Test if the heap has the given key."
-  @spec  has_key?(minheap(), key()) :: bool()
+  @spec has_key?(minheap(), key()) :: bool()
   def has_key?(heap, k)
 
   @doc "Get the value for a key, or return default if the key does not exist."
-  @spec  get(minheap(), key(), t) :: val() | t when t: var
+  @spec get(minheap(), key(), t) :: val() | t when t: var
   def get(heap, k, default \\ nil)
 
   @doc "Get the value for a key, or raise if the key does not exist."
@@ -44,7 +45,7 @@ defprotocol Exa.Std.MinHeap do
   Delete a key from the heap.   
   The minimum entry may change.
   """
-  @spec  delete(minheap(), key()) :: minheap()
+  @spec delete(minheap(), key()) :: minheap()
   def delete(heap, k)
 
   @doc """
@@ -52,7 +53,7 @@ defprotocol Exa.Std.MinHeap do
   The heap is not modified.
   If the heap does not have any entries, return `:empty`.
   """
-  @spec  peek(minheap()) :: :empty | {key(), val()}
+  @spec peek(minheap()) :: :empty | {key(), val()}
   def peek(heap)
 
   @doc """
@@ -60,7 +61,7 @@ defprotocol Exa.Std.MinHeap do
   If the key already exists in the heap, its value is updated.
   The minimum entry may change.
   """
-  @spec  push(minheap(), key(), val()) :: minheap()
+  @spec push(minheap(), key(), val()) :: minheap()
   def push(heap, k, v)
 
   @doc """
@@ -68,6 +69,14 @@ defprotocol Exa.Std.MinHeap do
   Return the minimum entry and the modified heap.
   If the heap does not have any entries, return `:empty`.
   """
-  @spec  pop(minheap()) :: :empty | {{key(), val()}, minheap()}
+  @spec pop(minheap()) :: :empty | {{key(), val()}, minheap()}
   def pop(heap)
+
+  @doc "Serialize to a list in arbitrary order."
+  @spec to_list(minheap()) :: [{key(), val()}]
+  def to_list(heap)
+
+  @doc "Serialize to a map."
+  @spec to_map(minheap()) :: %{key() => val()}
+  def to_map(heap)
 end
