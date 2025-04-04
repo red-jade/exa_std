@@ -172,15 +172,19 @@ defmodule Exa.Std.Histo1D do
   @doc """
   The total number of data values in the histogram.
   The sum of all the counts.
+
+  The total count may be negative if there are transient negative counts.
   """
-  @spec total_count(H.histo1d()) :: E.count()
+  @spec total_count(H.histo1d()) :: integer()
   def total_count(histo), do: :array.sparse_foldl(fn _i, n, sum -> sum + n end, 0, histo)
 
   @doc """
   The total value of all the data represented in the histogram.
   Sum the product of array index value and count.
+
+  The total value may be negative if there are transient negative counts.
   """
-  @spec total_value(H.histo1d()) :: E.count()
+  @spec total_value(H.histo1d()) :: integer()
   def total_value(histo), do: :array.sparse_foldl(fn i, n, sum -> sum + i * n end, 0, histo)
 
   @doc """
@@ -234,13 +238,15 @@ defmodule Exa.Std.Histo1D do
   Returns the empty list if the size is 0.
 
   Returns error if the total count is zero for a non-empty histogram
-  (i.e. contains negative counts that balance positive counts).
+  (i.e. contains negative counts that balance positive counts),
+  or has a negative total count.
   """
   @spec pdf(H.histo1d()) :: [float()] | {:error, any()}
   def pdf(histo) do
     case {size(histo), total_count(histo)} do
       {0, 0} -> []
       {_, 0} -> {:error, "Zero total count for non-empty histogram"}
+      {_, n} when n < 0 -> {:error, "Negative total count"}
       {_, n} -> histo |> to_list() |> Enum.map(fn i -> i / n end)
     end
   end
@@ -263,7 +269,8 @@ defmodule Exa.Std.Histo1D do
   Returns the empty list if the size is 0.
 
   Returns error if the total count is zero for a non-empty histogram
-  (i.e. contains negative counts that balance positive counts).
+  (i.e. contains negative counts that balance positive counts),
+  or if the total count is negative.
   """
   @spec cdf(H.histo1d()) :: [float()] | {:error, any()}
   def cdf(histo) do
@@ -273,6 +280,9 @@ defmodule Exa.Std.Histo1D do
 
       {_, 0} ->
         {:error, "Zero total count for non-empty histogram"}
+
+      {_, n} when n < 0 ->
+        {:error, "Negative total count"}
 
       {_, n} ->
         {^n, cdf} =

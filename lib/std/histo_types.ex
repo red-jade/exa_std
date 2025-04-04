@@ -57,8 +57,14 @@ defmodule Exa.Std.HistoTypes do
   @type histo() :: %{any() => E.count()}
   defguard is_histo(h) when is_map(h)
 
-  @typedoc "A 1D histogram with a count for an index bin value."
-  @type histo1d() :: :array.array(E.count())
+  @typedoc """
+  A 1D histogram with a count for an index bin value.
+
+  The count will usually be a non-negative integer,
+  but transient negative values are allowed,
+  when there is a race condition between async updates.
+  """
+  @type histo1d() :: :array.array(integer())
 
   # note :array.is_array is a function not a guard?
 
