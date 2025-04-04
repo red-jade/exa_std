@@ -4,6 +4,14 @@ defprotocol Exa.Std.MinHeap do
 
   The entries are key-value pairs sorted by numerical value,
   so the heap is a minimum sorted map.
+
+  Note the distinct behavior of `add/3` and `update/3`.
+  It is the client's responsibility to use `add/3` 
+  for a new key, and `update/3` when the key already exists.
+  There is no general `put` function, 
+  which supports flexible add-or-update (like `Map.put/3`).
+  The reason is that some implementations of the protocol
+  do not have an O(1) way to test for an existing key.
   """
 
   alias Exa.Types, as: E
@@ -20,6 +28,15 @@ defprotocol Exa.Std.MinHeap do
 
   # min heap is any struct that implements the protocol
   @type minheap() :: map()
+
+  # regular kv tuple
+  @type kvtup() :: {key(), val()}
+
+  # reversed vk tuple that sorts with the value
+  @type vktup() :: {val(), key()}
+
+  # regular kv map
+  @type kvmap() :: %{key() => val()}
 
   # --------
   # protocol
@@ -43,40 +60,68 @@ defprotocol Exa.Std.MinHeap do
 
   @doc """
   Delete a key from the heap.   
+
   The minimum entry may change.
+
+  It is not an error if the key does not exist. 
+  The heap is returned unchanged.
   """
   @spec delete(minheap(), key()) :: minheap()
   def delete(heap, k)
 
   @doc """
+  Add a new key-value entry to the heap.
+
+  The minimum entry may change.
+
+  The client must ensure that the key is new.
+  If the key already exists, use `update/3`.
+
+  An implementation may optionally check for an existing key
+  and raise an error - if the check can be done in O(1).
+  """
+  @spec add(minheap(), key(), val()) :: minheap()
+  def add(heap, k, v)
+
+  @doc """
+  Update an existing key-value entry in the heap.
+
+  The minimum entry may change.
+
+  The client must ensure that the key already exists.
+  If the key does not already exist, use `add/3`.
+
+  An implementation may optionally check for a missing key
+  and raise an error - if the check can be done in O(1).
+  """
+  @spec update(minheap(), key(), val()) :: minheap()
+  def update(heap, k, v)
+
+  @doc """
   Get the current minimum key-value entry.
+
   The heap is not modified.
-  If the heap does not have any entries, return `:empty`.
+
+  If the heap does not have any entries, returns `:empty`.
   """
   @spec peek(minheap()) :: :empty | {key(), val()}
   def peek(heap)
 
   @doc """
-  Put a new key-value entry into the heap.
-  If the key already exists in the heap, its value is updated.
-  The minimum entry may change.
-  """
-  @spec push(minheap(), key(), val()) :: minheap()
-  def push(heap, k, v)
-
-  @doc """
   Pop the current minimum key-value entry off the heap.
-  Return the minimum entry and the modified heap.
+
+  Returns the minimum entry and the modified heap.
+
   If the heap does not have any entries, return `:empty`.
   """
   @spec pop(minheap()) :: :empty | {{key(), val()}, minheap()}
   def pop(heap)
 
   @doc "Serialize to a list in arbitrary order."
-  @spec to_list(minheap()) :: [{key(), val()}]
+  @spec to_list(minheap()) :: [kvtup()]
   def to_list(heap)
 
   @doc "Serialize to a map."
-  @spec to_map(minheap()) :: %{key() => val()}
+  @spec to_map(minheap()) :: kvmap()
   def to_map(heap)
 end

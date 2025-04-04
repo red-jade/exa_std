@@ -4,10 +4,10 @@ defmodule Exa.Std.MinHeapTest do
   alias Exa.Std.MinHeap
 
   @impls [
-    Exa.Std.MinHeap.Map, 
-    Exa.Std.MinHeap.Ord, 
+    Exa.Std.MinHeap.Map,
+    Exa.Std.MinHeap.Ord,
     Exa.Std.MinHeap.Tree
-]
+  ]
 
   test "tree" do
     tree = Exa.Std.MinHeap.Tree.new()
@@ -16,28 +16,28 @@ defmodule Exa.Std.MinHeapTest do
     assert_raise ArgumentError, fn -> MinHeap.fetch!(tree, 99) end
     assert :empty == MinHeap.peek(tree)
 
-    tree = MinHeap.push(tree, 1, 10)
+    tree = MinHeap.add(tree, 1, 10)
     assert 1 == MinHeap.size(tree)
     assert 10 == MinHeap.get(tree, 1)
     assert nil == MinHeap.get(tree, 99)
     assert_raise ArgumentError, fn -> MinHeap.fetch!(tree, 99) end
     assert {1, 10} == MinHeap.peek(tree)
 
-    tree = MinHeap.push(tree, 3, 67)
+    tree = MinHeap.add(tree, 3, 67)
     assert 2 == MinHeap.size(tree)
     assert 67 == MinHeap.get(tree, 3)
     assert nil == MinHeap.get(tree, 99)
     assert_raise ArgumentError, fn -> MinHeap.fetch!(tree, 99) end
     assert {1, 10} == MinHeap.peek(tree)
 
-    tree = MinHeap.push(tree, 2, 16)
+    tree = MinHeap.add(tree, 2, 16)
     assert 3 == MinHeap.size(tree)
     assert 16 == MinHeap.get(tree, 2)
     assert nil == MinHeap.get(tree, 99)
     assert_raise ArgumentError, fn -> MinHeap.fetch!(tree, 99) end
     assert {1, 10} == MinHeap.peek(tree)
 
-    tree = tree |> MinHeap.push(4, 12) |> MinHeap.push(5, 43)
+    tree = tree |> MinHeap.add(4, 12) |> MinHeap.add(5, 43)
     assert 5 == MinHeap.size(tree)
     assert 10 == MinHeap.get(tree, 1)
     assert 67 == MinHeap.get(tree, 3)
@@ -78,33 +78,34 @@ defmodule Exa.Std.MinHeapTest do
   end
 
   defp simple(mod) do
+    IO.inspect(mod)
+
     heap =
       mod.new()
-      |> MinHeap.push(1, 43)
-      |> MinHeap.push(2, 16)
-      |> MinHeap.push(1, 24)
-      |> MinHeap.push(2, 32)
-      |> MinHeap.push(1, 10)
+      |> MinHeap.add(1, 43)
+      |> MinHeap.add(2, 16)
+      |> MinHeap.update(1, 24)
+      |> MinHeap.update(2, 32)
+      |> MinHeap.update(1, 10)
 
     assert 2 == MinHeap.size(heap)
 
-    assert 16 = MinHeap.get(heap, 2)
+    assert 32 = MinHeap.get(heap, 2)
     assert 10 = MinHeap.fetch!(heap, 1)
 
-    assert mod.new() |> MinHeap.push(1, 10) == MinHeap.delete(heap, 2)
-    assert mod.new() |> MinHeap.push(2, 16) == MinHeap.delete(heap, 1)
+    assert mod.new() |> MinHeap.add(1, 10) == MinHeap.delete(heap, 2)
+    assert mod.new() |> MinHeap.add(2, 32) == MinHeap.delete(heap, 1)
 
     assert :error == MinHeap.get(heap, 99, :error)
     assert_raise ArgumentError, fn -> MinHeap.fetch!(heap, 99) end
-
+    IO.inspect(heap)
     assert {1, 10} == MinHeap.peek(heap)
-    {min, heap} = MinHeap.pop(heap)
-    assert {1, 10} == min
-    assert mod.new() |> MinHeap.push(2, 16) == heap
+    {{1, 10}, heap} = MinHeap.pop(heap)
+    assert mod.new() |> MinHeap.add(2, 32) == heap
 
-    assert {2, 16} == MinHeap.peek(heap)
+    assert {2, 32} == MinHeap.peek(heap)
     {min, heap} = MinHeap.pop(heap)
-    assert {2, 16} == min
+    assert {2, 32} == min
     assert mod.new() == heap
 
     assert :empty = MinHeap.peek(heap)
