@@ -250,8 +250,7 @@ defmodule Exa.Std.MinHeap.Tree do
     end
 
     # O(logN)
-    def pop(%MHTree{root: :empty} = empty),
-      do: {:empty, empty}
+    def pop(%MHTree{root: :empty, size: 0}), do: :empty
 
     def pop(%MHTree{root: {v, k}, size: 1}),
       do: {{k, v}, %MHTree{}}

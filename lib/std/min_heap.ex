@@ -5,6 +5,11 @@ defprotocol Exa.Std.MinHeap do
   The entries are key-value pairs sorted by numerical value,
   so the heap is a minimum sorted map.
 
+  It can be useful to initialize the heap with 
+  _infinite_ maximum values,
+  so the value is allowed to be the atom `:inf`,
+  which sorts higher than any number.
+
   Note the distinct behavior of `add/3` and `update/3`.
   It is the client's responsibility to use `add/3` 
   for a new key, and `update/3` when the key already exists.
@@ -28,6 +33,8 @@ defprotocol Exa.Std.MinHeap do
 
   # min heap is any struct that implements the protocol
   @type minheap() :: map()
+
+  # tuples and maps ----------
 
   # regular kv tuple
   @type kvtup() :: {key(), val()}
@@ -81,7 +88,7 @@ defprotocol Exa.Std.MinHeap do
   and raise an error - if the check can be done in O(1).
   """
   @spec add(minheap(), key(), val()) :: minheap()
-  def add(heap, k, v)
+  def add(heap, k, v \\ :inf)
 
   @doc """
   Update an existing key-value entry in the heap.
