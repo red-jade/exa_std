@@ -21,11 +21,27 @@ Module path: `Exa.Std`
 - Map of Lists (MoL)
 - Map of Sets (MoS)
 - Yet Another Zip List (yazl): list with local cursor
+- Minimum Heap that can also be used as a Priority Queue
 
 ## Building
 
 To bootstrap an `exa_xxx` library build, 
 you must run `mix deps.get` twice.
+
+## Benchmarks
+
+Exa uses _Benchee_ for performancee testing.
+
+Test results are stored under `test/bench/*.benchee`.
+The current _latest_ baseline and previous results are checked-in.
+
+Run the benchmarks and compare with latest result:
+
+`$ mix test --only benchmark:true`
+
+To run specific benchmark test, for example:
+
+`$ mix test --only benchmark:true test/exa/std/min_heap_test.exs`
 
 ## Acknowledgements
 

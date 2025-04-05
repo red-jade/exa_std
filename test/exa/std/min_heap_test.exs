@@ -5,6 +5,8 @@ defmodule Exa.Std.MinHeapTest do
 
   alias Exa.Std.MinHeap
 
+  @bench_dir Path.join(["test", "bench"])
+
   @impls [
     Exa.Std.MinHeap.Map,
     Exa.Std.MinHeap.Ord,
@@ -115,19 +117,19 @@ defmodule Exa.Std.MinHeapTest do
   end
 
   test "random" do
-    for mod <- @impls, do: random(100, 1, 1_000, mod)
+    kvs = random(100, 1, 1_000)
+    for mod <- @impls do 
+      pops = add_pop(kvs, mod)
+      # not just pure flipped sort
+      # because repeated values for different keys are allowed in any order
+      assert kvs |> vals() |> Enum.sort() == pops |> vals()
+    end
   end
 
   # generate a random list of n integers between j and k inclusive
-  defp random(n, i, j, mod) do
-    rand = Random.generate(n, fn -> Random.uniform_int(i,j) end)
-    kvs = Enum.zip(1..n, rand)
-    heap = Enum.reduce(kvs, mod.new(), fn {k,v}, heap -> MinHeap.add(heap, k, v) end)
-    # not just pure flip sort
-    # because repeated values for different keys are allowed in any order
-    pops = heap |> pop_all() |> vals()
-    vals = kvs |> vals() |> Enum.sort()
-    assert vals == pops
+  # then index with 1-based keys
+  defp random(n, i, j) do
+    Enum.zip(1..n, Random.generate(n, fn -> Random.uniform_int(i,j) end))
   end
 
   defp pop_all(heap, out \\ []) do
@@ -138,4 +140,37 @@ defmodule Exa.Std.MinHeapTest do
   end
 
   defp vals(kvs), do: Enum.map(kvs, &elem(&1,1) )
+
+  # test workflows
+
+  defp add_pop(kvs, mod) do
+    kvs 
+    |> Enum.reduce(mod.new(), fn {k,v}, heap -> MinHeap.add(heap, k, v) end)
+    |> pop_all() 
+  end
+
+  # ----------
+  # benchmarks
+  # ----------
+
+  @tag benchmark: true
+  @tag timeout: 100_000
+  test "random benchmarks" do
+    Benchee.run(
+      benchmarks(),
+      time: 20,
+      save: [path: @bench_dir <> "/min_heap.benchee"],
+      load: @bench_dir <> "/min_heap.latest.benchee"
+    )
+  end
+
+  defp benchmarks() do
+    n = 1_000
+    kvs = random(n,1, 1_000)
+    for mod <- @impls, into: %{} do
+      impl = mod |> to_string() |> String.split(".") |> List.last() 
+      name = Enum.join(["add_pop", n, impl], "_") |> IO.inspect()
+      {name, fn -> add_pop(kvs, mod) end}
+    end
+  end
 end

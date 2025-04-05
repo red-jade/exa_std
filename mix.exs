@@ -40,7 +40,8 @@ defmodule Exa.Std.MixProject do
       :exa_core,
       :exa_space,
       :dialyxir,
-      :ex_doc
+      :ex_doc,
+      :benchee
     ]
   end
 
