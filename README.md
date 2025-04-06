@@ -12,7 +12,7 @@ Module path: `Exa.Std`
 
 - Histograms for positive integer labels (IDs)
   - 1D using the Erlang `:array` module
-  - Geeral, 2D, 3D sparse histograms using Elixir `Map` module
+  - General, 2D, 3D sparse histograms using Elixir `Map` module
 - Run Length Encoding (RLE):
   - general for lists of any type
   - integers, using lossless binary delta-compression
@@ -21,7 +21,14 @@ Module path: `Exa.Std`
 - Map of Lists (MoL)
 - Map of Sets (MoS)
 - Yet Another Zip List (yazl): list with local cursor
-- Minimum Heap that can also be used as a Priority Queue
+- Minimum Heap of key-value pairs (Sorted Map),
+  which can also be used as a Priority Queue.
+
+The Minimum Heap is expressed as a protocol,
+with three concrete implementations:
+- map and minimum-valued index
+- ordered set
+- complete binary tree
 
 ## Building
 
