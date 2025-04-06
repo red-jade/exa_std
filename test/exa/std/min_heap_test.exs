@@ -177,7 +177,7 @@ defmodule Exa.Std.MinHeapTest do
   # ----------
 
   @tag benchmark: true
-  @tag timeout: 200_000
+  @tag timeout: 400_000
   test "random benchmarks" do
     Benchee.run(
       benchmarks(),
@@ -188,22 +188,22 @@ defmodule Exa.Std.MinHeapTest do
   end
 
   defp benchmarks() do
-    # total number of kv pairs
-    n = 1_000
-    # number of updates and pops 20%
-    m = div(n, 5)
-    # random values for add
-    kvs = random(n, 1, 1_000)
+    params =
+      for mod <- @impls, n <- [1_000, 10_000] do
+        {mod, n, div(n, 5), random(n, 1, 10_000)}
+      end
 
-    benchs =
-      Enum.reduce(@impls, %{}, fn mod, benchs ->
-        Map.put(benchs, test_name("add_pop", n, mod), fn -> add_pop(mod, kvs) end)
-      end)
-
-    Enum.reduce(@impls, benchs, fn mod, benchs ->
+    %{}
+    |> add_tests(params, fn {mod, n, _, kvs}, benchs ->
+      Map.put(benchs, test_name("add_pop", n, mod), fn -> add_pop(mod, kvs) end)
+    end)
+    |> add_tests(params, fn {mod, n, m, kvs}, benchs ->
       Map.put(benchs, test_name("add_upd_pop", n, mod), fn -> add_upd_pop(mod, kvs, m) end)
     end)
   end
+
+  # swap args for piping reduce
+  defp add_tests(benchs, params, fun), do: Enum.reduce(params, benchs, fun)
 
   defp test_name(name, n, mod) do
     impl = mod |> to_string() |> String.split(".") |> List.last()

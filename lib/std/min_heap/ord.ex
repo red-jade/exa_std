@@ -93,7 +93,9 @@ defmodule Exa.Std.MinHeap.Ord do
     def pop(%MHOrd{ord: [{v, k} | t]}), do: {{k, v}, %MHOrd{ord: t}}
 
     # O(n)
-    # delete and add - slow but easy
+    # delete then add - slow but easy
+    # could do this in single pass, see previous version
+    # marginal reduction iold+inew -> max(iold,inew)
     def update(%MHOrd{ord: ord}, k, v) do
       case do_del(ord, k, []) do
         {:found, new_ord} -> %MHOrd{ord: do_add(new_ord, k, v, [])}

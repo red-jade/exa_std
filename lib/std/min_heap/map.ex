@@ -84,22 +84,20 @@ defmodule Exa.Std.MinHeap.Map do
 
     # O(n)
 
-    def pop(%MHMap{kmin: nil, map: %{}}), do: :empty
+    def pop(%MHMap{kmin: nil, map: %{}}),
+      do: :empty
 
-    def pop(%MHMap{kmin: kmin, map: map}) do
+    def pop(%MHMap{kmin: kmin, map: map}) when map_size(map) == 1,
+      do: {{kmin, map[kmin]}, %MHMap{}}
+
+    def pop(%MHMap{kmin: kmin, map: map} = heap) do
       {vmin, new_map} = Map.pop!(map, kmin)
-
-      new_kmin =
-        case map_size(new_map) do
-          0 -> nil
-          _ -> new_map |> Enum.reduce(&kvmin/2) |> elem(0)
-        end
-
-      {{kmin, vmin}, %MHMap{kmin: new_kmin, map: new_map}}
+      {new_kmin, _} = Enum.reduce(new_map, &kvmin/2)
+      {{kmin, vmin}, %{heap | :kmin => new_kmin, :map => new_map}}
     end
 
     @spec kvmin(MH.kvtup(), MH.kvtup()) :: MH.kvtup()
     defp kvmin({_, v1} = e1, {_, v2}) when v1 < v2, do: e1
-    defp kvmin(_e1, e2), do: e2
+    defp kvmin(_, e2), do: e2
   end
 end
