@@ -9,8 +9,8 @@ defmodule Exa.Std.MinHeap.Ord do
   If there are multiple keys with the same value,
   their order will be by key (ascending).
 
-  All functions are O(n) except `peek/1` and `pop/1`, 
-  which are both O(1).
+  All functions are `O(N)` except `peek/1` and `pop/1`, 
+  which are both `O(1)`.
   """
   alias Exa.Std.MinHeap, as: MH
 
@@ -38,7 +38,9 @@ defmodule Exa.Std.MinHeap.Ord do
   defimpl Exa.Std.MinHeap, for: MHOrd do
     alias Exa.Std.MinHeap, as: MH
 
-    # O(n)
+    defguard is_val(v) when is_number(v) or v == :inf
+
+    # O(N)
     def has_key?(%MHOrd{ord: ord}, key), do: do_has?(ord, key)
 
     @spec do_has?(MHOrd.vklist(), MH.key()) :: bool()
@@ -46,10 +48,10 @@ defmodule Exa.Std.MinHeap.Ord do
     defp do_has?([{_, k} | _], k), do: true
     defp do_has?([_ | t], k), do: do_has?(t, k)
 
-    # O(n)
+    # O(N)
     def size(%MHOrd{ord: ord}), do: length(ord)
 
-    # O(n)
+    # O(N)
     def get(%MHOrd{ord: ord}, key, default \\ nil), do: do_get(ord, key, default)
 
     @spec do_get(MHOrd.vklist(), MH.key(), d) :: d | MH.val() when d: var
@@ -57,7 +59,7 @@ defmodule Exa.Std.MinHeap.Ord do
     defp do_get([{v, k} | _], k, _), do: v
     defp do_get([_ | t], k, default), do: do_get(t, k, default)
 
-    # O(n)
+    # O(N)
     def fetch!(heap, k) do
       case get(heap, k, :empty) do
         :empty -> raise(ArgumentError, message: "Heap missing key '#{k}'")
@@ -65,15 +67,19 @@ defmodule Exa.Std.MinHeap.Ord do
       end
     end
 
-    # O(n)
+    # O(N)
     def to_list(%MHOrd{ord: ord}),
       do: Enum.map(ord, fn {v, k} -> {k, v} end)
 
-    # O(n)
+    # O(N)
     def to_map(%MHOrd{ord: ord}),
       do: Enum.reduce(ord, %{}, fn {v, k}, m -> Map.put(m, k, v) end)
 
-    # O(n)
+    # O(N)
+    def keys(%MHOrd{ord: ord}),
+      do: Enum.reduce(ord, [], fn {_, k}, ks -> [k | ks] end)
+
+    # O(N)
     # no error for missing key
     def delete(%MHOrd{ord: ord}, k),
       do: %MHOrd{ord: ord |> do_del(k, []) |> elem(1)}
@@ -92,20 +98,20 @@ defmodule Exa.Std.MinHeap.Ord do
     def pop(%MHOrd{ord: []}), do: :empty
     def pop(%MHOrd{ord: [{v, k} | t]}), do: {{k, v}, %MHOrd{ord: t}}
 
-    # O(n)
+    # O(N)
     # delete then add - slow but easy
     # could do this in single pass, see previous version
     # marginal reduction iold+inew -> max(iold,inew)
-    def update(%MHOrd{ord: ord}, k, v) do
+    def update(%MHOrd{ord: ord}, k, v) when is_val(v) do
       case do_del(ord, k, []) do
         {:found, new_ord} -> %MHOrd{ord: do_add(new_ord, k, v, [])}
         {:not_found, _ord} -> raise(ArgumentError, message: "Heap missing key '#{k}'")
       end
     end
 
-    # O(n)
-    def add(%MHOrd{ord: []}, k, v), do: %MHOrd{ord: [{v, k}]}
-    def add(%MHOrd{ord: ord}, k, v), do: %MHOrd{ord: do_add(ord, k, v, [])}
+    # O(N)
+    def add(%MHOrd{ord: []}, k, v) when is_val(v), do: %MHOrd{ord: [{v, k}]}
+    def add(%MHOrd{ord: ord}, k, v) when is_val(v), do: %MHOrd{ord: do_add(ord, k, v, [])}
 
     # note - does not raise for old key after new insertion point
     @spec do_add(MHOrd.vklist(), MH.key(), MH.val(), MHOrd.vklist()) :: MHOrd.vklist()

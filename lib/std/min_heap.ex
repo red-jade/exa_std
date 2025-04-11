@@ -124,6 +124,10 @@ defprotocol Exa.Std.MinHeap do
   @spec pop(minheap()) :: :empty | {{key(), val()}, minheap()}
   def pop(heap)
 
+  @doc "Get the list of keys in arbitrary order."
+  @spec to_list(minheap()) :: [MH.key()]
+  def keys(heap)
+
   @doc "Serialize to a list in arbitrary order."
   @spec to_list(minheap()) :: [kvtup()]
   def to_list(heap)

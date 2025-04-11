@@ -6,11 +6,10 @@ defmodule Exa.Std.MinHeap.Map do
   If there are multiple keys with the same value,
   their ordering is arbitrary.
 
-  All functions are O(1) except `pop/1`, `to_list/1` 
+  All functions are `O(1)` except `pop/1`, `to_list/1` 
   and `delete/2` of the minimum entry, 
-  which are all O(n).
+  which are all `O(N)`.
   """
-
   defmodule MHMap do
     alias Exa.Std.MinHeap, as: MH
 
@@ -33,6 +32,8 @@ defmodule Exa.Std.MinHeap.Map do
   # --------
 
   defimpl Exa.Std.MinHeap, for: MHMap do
+    defguard is_val(v) when is_number(v) or v == :inf
+
     # O(1)
     def size(%MHMap{map: map}), do: map_size(map)
 
@@ -50,13 +51,16 @@ defmodule Exa.Std.MinHeap.Map do
       end
     end
 
-    # O(n)
+    # O(N)
     def to_list(%MHMap{map: map}), do: Map.to_list(map)
 
     # O(1)
     def to_map(%MHMap{map: map}), do: map
 
-    # O(1) for most keys; O(n) for deleting min key
+    # O(N)
+    def keys(%MHMap{map: map}), do: Map.keys(map)
+
+    # O(1) for most keys; O(N) for deleting min key
     def delete(%MHMap{map: map} = heap, k) when not is_map_key(map, k), do: heap
     def delete(%MHMap{kmin: k} = heap, k), do: heap |> pop() |> elem(1)
     def delete(%MHMap{kmin: kmin, map: map}, k), do: %MHMap{kmin: kmin, map: Map.delete(map, k)}
@@ -66,13 +70,23 @@ defmodule Exa.Std.MinHeap.Map do
     def peek(%MHMap{kmin: kmin, map: map}), do: {kmin, map[kmin]}
 
     # O(1)
-    def add(%MHMap{kmin: nil, map: %{}}, k, v), do: %MHMap{kmin: k, map: %{k => v}}
-    def add(%MHMap{map: map} = heap, k, v) when not is_map_key(map, k), do: put(heap, k, v)
-    def add(_heap, k, _v), do: raise(ArgumentError, message: "Heap existing key '#{k}'")
+
+    def add(%MHMap{kmin: nil, map: %{}}, k, v) when is_val(v),
+      do: %MHMap{kmin: k, map: %{k => v}}
+
+    def add(%MHMap{map: map} = heap, k, v) when is_val(v) and not is_map_key(map, k),
+      do: put(heap, k, v)
+
+    def add(_heap, k, _v),
+      do: raise(ArgumentError, message: "Heap existing key '#{k}'")
 
     # O(1)
-    def update(%MHMap{map: map} = heap, k, v) when is_map_key(map, k), do: put(heap, k, v)
-    def update(_heap, k, _v), do: raise(ArgumentError, message: "Heap missing key '#{k}'")
+
+    def update(%MHMap{map: map} = heap, k, v) when is_val(v) and is_map_key(map, k),
+      do: put(heap, k, v)
+
+    def update(_heap, k, _v),
+      do: raise(ArgumentError, message: "Heap missing key '#{k}'")
 
     # for map implementation, we do have tolerant O(1) 'put' function
     @spec put(MHMap.t(), MH.key(), MH.val()) :: MHMap.t()
@@ -82,7 +96,7 @@ defmodule Exa.Std.MinHeap.Map do
         map: Map.put(map, k, v)
       }
 
-    # O(n)
+    # O(N)
 
     def pop(%MHMap{kmin: nil, map: %{}}),
       do: :empty
@@ -92,12 +106,18 @@ defmodule Exa.Std.MinHeap.Map do
 
     def pop(%MHMap{kmin: kmin, map: map} = heap) do
       {vmin, new_map} = Map.pop!(map, kmin)
-      {new_kmin, _} = Enum.reduce(new_map, &kvmin/2)
+      [k | ks] = Map.keys(new_map)
+      new_kmin = kmin(ks, new_map, k, new_map[k])
       {{kmin, vmin}, %{heap | :kmin => new_kmin, :map => new_map}}
     end
 
-    @spec kvmin(MH.kvtup(), MH.kvtup()) :: MH.kvtup()
-    defp kvmin({_, v1} = e1, {_, v2}) when v1 < v2, do: e1
-    defp kvmin(_, e2), do: e2
+    @spec kmin([MH.key()], MH.kvmap(), MH.key(), MH.val()) :: MH.key()
+
+    defp kmin([k | ks], map, kmin, vmin) do
+      v = map[k]
+      if v < vmin, do: kmin(ks, map, k, v), else: kmin(ks, map, kmin, vmin)
+    end
+
+    defp kmin([], _map, kmin, _vmin), do: kmin
   end
 end

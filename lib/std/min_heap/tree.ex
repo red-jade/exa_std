@@ -5,35 +5,60 @@ defmodule Exa.Std.MinHeap.Tree do
   If there are multiple keys with the same value,
   their order will be by key (ascending).
 
-  ## Complete Binary Tree
-
-  We build a complete binary tree, 
-  where each node has a data entry.
-
-  Leaf nodes do not have any children. 
-
-  Branch nodes have two children, 
-  except there may be one branch node with just one child.
-  We call the slots for children _left_ (first) and _right_ (second).
-
-  There is a special case for the root, 
-  which is completely empty for an empty tree.
-
-  A _layer_ is a set of nodes at the same depth in the tree.
-
-  A binary tree can be described using two 0-based integers:
-  - depth: the number of ancestors, also the number of completed layers.
-  - position: the number of previous siblings within the layer.
-
-  A complete binary tree is filled by layer 
-  i.e. _balanced_, but not totally binary.
-  A new layer is only started when the previous layer is complete.
-  According to our naming convention, 
-  layers are filled from left-to-right.
+  Each node in the complete binary tree, 
+  has a value-key data entry.
 
   The _size_ of the tree is the total number of entries _N._
 
-  The maximum depth of the whole tree is `O(logN).`
+  The maximum depth of the whole tree is `ceil(log₂N)` ~ `O(logN)`.
+
+  ## Complete Binary Tree
+
+  A binary tree is one where branch nodes 
+  typically have two children.
+  However, a _complete_ binary tree is not a _total_ binary tree,
+  because one branch node may have just one child.
+
+  We call the slots for children _left_ (first) and _right_ (second).
+  There are two special cases:
+  - A branch node with just one child,
+    has an `:empty` marker in the right slot.
+  - An empty tree with have `:empty` root.
+
+  Leaf nodes do not have any children. 
+  A leaf node will just be a pure data entry
+
+  ## Layers
+
+  A _layer_ is a set of nodes at the same depth in the tree.
+
+  A _complete_ binary tree is filled by layer 
+  i.e. _balanced_, but not totally binary.
+  According to our naming convention, 
+  layers are filled from left-to-right.
+
+  Each node in the tree can be described with two 0-based integers:
+  - layer: the number of ancestors
+  - position: the number of previous siblings within the layer
+
+  So all layers are complete, except possibly the last layer,
+  which may be complete or incomplete.
+  A new layer is only started when the previous layer is complete.
+
+  If the last layer is complete, every branch node 
+  in the previous layer has exactly two children.
+  The deletion point will be the last right child in the layer.
+  The insertion point will be to start a new layer.
+
+  If the last layer is incomplete, the boundary occurs at either:
+  - a single branch node that has one left child and an empty right slot
+  - a branch node with two children, followed by a leaf node with no children
+
+  The deletion point will be either:
+  - the left child of the partial branch node, 
+    converting the branch to a leaf
+  - the right child of the last complete branch node, 
+    leaving an `:empty` right slot
 
   ## Binary Address
 
@@ -41,39 +66,60 @@ defmodule Exa.Std.MinHeap.Tree do
   can be represented as a sequence of left and right turns.
   If we assign left as `0`, and right as `1`,
   then any node can be addresed by a binary number.
-  The number of binary digits will equal the layer index.
   Leading zeroes are significant.
 
+  The number of binary digits will equal the layer.
+
+  The binary address evaluates to the position in the layer. 
+
   The empty binary indicates the root (if it exists).
+
   The first layer has addresses: `0` left and `1` right.
+
   The second layer has addresses: `00` `01` `10` `11`.
+
+  **The critical observation for complete binary trees,
+  is that the binary address of the current location
+  can be _calculated_ from the size.**
 
   ## Cursor
 
-  A _cursor_ is the current location in the tree,
-  where entries will be inserted or removed during deletion. 
+  A _cursor_ points to a current location within the tree,
+  where entries will be inserted or removed. 
 
-  The cursor is the address of the _last_ entry in the tree,
-  i.e. the last (rightmost) position in the last (deepest) layer.
+  A cursor is a sequence (list) of nodes,
+  starting within the tree and ending at the root.
+  A full cursor begins with a concrete target subtree branch or leaf node.
+  All the remaining branch nodes in the cursor 
+  have the left or right slot replaced by a turn marker: `:l` or `:r`.
 
-  An inserted entry will be added after (right of) the cursor.
-  The entry removed during deletion will be 
-  taken from before (left of) the cursor.
+  Note that a full cursor from a concrete head node up to the root,
+  contains _all_ the information necessary to rebuild the whole tree. 
 
-  If the last layer is complete, then the deletion point 
-  will be the last entry in that layer, and the insertion point
-  will be the first position in the next (empty) layer.
+  **The binary address can be used to build a cursor  
+  directly to the target location in `O(logN)` steps.**
 
-  The critical observation for complete binary trees,
-  is that the address of the current location
-  can be _calculated_ from the size.
-  The address can then be used to navigate 
-  directly the current location in O(logN) steps.
+  The deletion point is the node at the binary address
+  calculated from the current size of the tree, `N`.
+  The deletion cursor will truncate 
+  the head term for the deleted data entry leaf node.
 
-  This means there is no need to use a more complex data structure
-  that explicitly maintains the cursor location as a 
-  structural property of the data representation
-  (e.g. zipper or finger tree).
+  The insertion point is the node at the binary address
+  calculated from the future size of the tree, `N+1`.
+  The insertion cursor will implicitly have the new 
+  data entry leaf node as the head of the cursor.
+
+  ## Zipper
+
+  Operations using a cursor path are like a _Zipper_ (Huet, 1997).
+
+  There are two styles of processing cursors within the tree:
+  - _unzip_ : build a cursor downwards from root, 
+    using left and right turns through branch nodes
+  - _zip_ : consume a cursor by building a concrete subtree upwards, 
+    until it becomes the new root 
+
+  All _zip_ and _unzip_ operations on cursors are `O(logN)`. 
 
   ## Implementation
 
@@ -93,22 +139,69 @@ defmodule Exa.Std.MinHeap.Tree do
   A binary address is represented as a bitstring
   (sequence of binary digits).
 
-  Traversal down from root down to current location 
-  follows the evaluation of the cursor bitstring 
-  into left-right choices, while maintaining a 
-  path of ancestors through the tree.
-  [In zipper terminology, this is an _unzip_ operation.]
+  A full cursor is a list containing:
+  - head: a concrete leaf or branch node
+  - tail: path of branch nodes with one `:l` or `:r` turn marker
 
-  Traversal from modified location (insert/delete)
-  back up to the root will sew the two sides of the tree back together,
-  making sure to swap entries to maintain the min-heap property.
-  [In zipper terminology, this is an _zip_ operation.]
+  There are several zipper operations using cursors:
+  - unzip:
+    - to target binary address for insert/delete
+    - to target key (full tree traversal)
+    - bubbling high values down the tree 
+  - zip:
+    - neutral zip that just rebuilds the tree from the cursor
+    - delete target, make new leaf, then neutral zip
+    - insert at target, make new leaf, then bubble low value up
 
-  Both traversals are O(logN) operations,
-  so `push`, `pop` and `delete` are also O(logN).
+  ### Operations
+
+  Heap operations are implemented using unzip/zip cursors `O(logN)`,
+  and full tree traversal for random access to a key `O(N)`.
+
+  `add/3`:
+  - unzip to binary address of insertion (after last entry)
+  - zip insertion, bubble up new low value
+
+  `update/3`:
+  - unzip to find key (full traversal)
+  - replace value of target key:
+    - partial zip down, bubble new high value down into subtree
+    - partial zip up, bubble the new low value up to root
+
+  `pop/1`:
+  - unzip to binary address of deletion (last entry)
+  - retain removed leaf
+  - zip deletion, neutral zip up
+  - replace root node with removed node:
+    - zip down, bubble the moved high value down
+
+  `delete/2`:
+  - unzip to binary address of deletion (last entry)
+  - retain removed leaf
+  - zip deletion, neutral zip up
+  - unzip to find key (full traversal)
+  - replace target node with removed leaf:
+    - partial zip down, bubble the moved high value down into subtree
+    - partial zip up, bubble the moved low value up to root
+
+  `has_key?/1`, `get/3`, `fetch!`:
+  - traverse to find key (full traversal)
+
+  ### Complexity
+
+  Building and navigating cursors are `O(logN)` operations.
+
+  Functions `new/0`, `size/1` and `peek/1` are `O(1)`.
+
+  Cursor traversals are `O(logN)`:
+  `add/3`, `update/3` and `pop/1`.  
+
+  All operations that require a full tree traversal are `O(N)`:
+  `has_key?/1`, `get/3`, `delete/2`, `fetch!/2`, `to_list/1` and `to_map/1`.
   """
 
   import Bitwise
+
   alias Exa.Types, as: E
 
   defmodule MHTree do
@@ -119,10 +212,10 @@ defmodule Exa.Std.MinHeap.Tree do
     @type vkleaf() :: :empty | MH.vktup()
 
     # left subtree cannot be empty (complete binary tree)
-    @typep non_empty_vknode() :: MH.vktup() | vkbranch()
+    @type non_empty_vknode() :: MH.vktup() | vkbranch()
 
     # root or right subtree may be empty
-    @typep vknode() :: :empty | non_empty_vknode()
+    @type vknode() :: :empty | non_empty_vknode()
 
     # node has a data entry and one or two children
     # which can be raw entries or subtrees
@@ -131,10 +224,10 @@ defmodule Exa.Std.MinHeap.Tree do
     # then the subtree must contain 1 or 2 leaf entries
     # no need for tagged tuple here because
     # 3-tuple node matches differently from 2-tuple entry
-    @typep vkbranch() :: {MH.vktup(), non_empty_vknode(), vknode()}
+    @type vkbranch() :: {MH.vktup(), non_empty_vknode(), vknode()}
 
     # the root has the same properties as a right component
-    @typep vkroot() :: vknode()
+    @type vkroot() :: vknode()
 
     defstruct root: :empty,
               size: 0
@@ -144,13 +237,16 @@ defmodule Exa.Std.MinHeap.Tree do
             size: E.count()
           }
 
-    # cursor types
+    # cursor types ----------
 
     @type cnode() ::
-            MH.vkleaf()
+            vkleaf()
             | {MH.vktup(), :l, vknode()}
             | {MH.vktup(), non_empty_vknode(), :r}
 
+    # the head of a cursor must be a concrete node
+    # the tail must contain branch nodes with l/r placeholders
+    # cursors are not used for simple root: entry or empty
     @type cursor() :: [cnode()]
   end
 
@@ -158,37 +254,36 @@ defmodule Exa.Std.MinHeap.Tree do
   @doc "Create an empty heap."
   def new(), do: %MHTree{}
 
-  # testing only
-  def create(root, size), do: %MHTree{root: root, size: size}
-
   # --------
   # protocol
   # --------
 
   defimpl Exa.Std.MinHeap, for: MHTree do
+    defguard is_val(v) when is_number(v) or v == :inf
+
     # O(1)
     def size(%MHTree{size: size}), do: size
 
-    # O(n)
-    def has_key?(%MHTree{root: root}, key), do: find(root, key) != :error
+    # O(N)
+    def has_key?(%MHTree{root: root}, key), do: find(root, key) != :not_found
 
-    # O(n)
+    # O(N)
     def get(%MHTree{root: root}, key, default \\ nil) do
       case find(root, key) do
         {:ok, v} -> v
-        :error -> default
+        :not_found -> default
       end
     end
 
-    # O(n)
+    # O(N)
     def fetch!(%MHTree{root: root}, key) do
       case find(root, key) do
         {:ok, v} -> v
-        :error -> raise(ArgumentError, message: "Heap missing key '#{key}'")
+        :not_found -> raise(ArgumentError, message: "Heap missing key '#{key}'")
       end
     end
 
-    # O(n)
+    # O(N)
     def to_list(%MHTree{root: root}), do: do_list([], root)
 
     @spec do_list([MH.kvtup()], MHTree.vknode()) :: [MH.kvtup()]
@@ -196,7 +291,7 @@ defmodule Exa.Std.MinHeap.Tree do
     defp do_list(acc, {v, k}), do: [{k, v} | acc]
     defp do_list(acc, :empty), do: acc
 
-    # O(n)
+    # O(N)
     def to_map(%MHTree{root: root}), do: do_map(%{}, root)
 
     @spec do_map(MH.kvmap(), MHTree.vknode()) :: MH.kvmap()
@@ -204,15 +299,34 @@ defmodule Exa.Std.MinHeap.Tree do
     defp do_map(acc, {v, k}), do: Map.put(acc, k, v)
     defp do_map(acc, :empty), do: acc
 
-    # O(NlogN) - slow but easy
-    def delete(%MHTree{root: root}, key), do: do_del(%MHTree{}, root, key)
+    # O(N)
+    def keys(%MHTree{root: root}), do: do_keys([], root)
 
-    @spec do_del(MHTree.t(), MHTree.vknode(), MH.key()) :: MHTree.t()
-    defp do_del(acc, {{_v, key}, l, r}, key), do: acc |> do_del(l, key) |> do_del(r, key)
-    defp do_del(acc, {{v, k}, l, r}, key), do: add(acc, k, v) |> do_del(l, key) |> do_del(r, key)
-    defp do_del(acc, {_v, key}, key), do: acc
-    defp do_del(acc, {v, k}, _key), do: add(acc, k, v)
-    defp do_del(acc, :empty, _key), do: acc
+    @spec do_keys([MH.key()], MHTree.vknode()) :: [MH.key()]
+    defp do_keys(acc, {{_, k}, l, r}), do: [k | acc] |> do_keys(l) |> do_keys(r)
+    defp do_keys(acc, {_, k}), do: [k | acc]
+    defp do_keys(acc, :empty), do: acc
+
+    # O(N) 
+
+    def delete(%MHTree{root: :empty, size: 0} = empty, _key), do: empty
+
+    def delete(%MHTree{root: {_, key}, size: 1}, key), do: %MHTree{}
+    def delete(%MHTree{root: {_, _}, size: 1} = heap, _key), do: heap
+
+    def delete(%MHTree{root: root, size: n} = heap, key) do
+      # build cursor down to remove location and isolate leaf entry
+      [{_vdel, kdel} = vkdel | dpath] = unzip_addr(root, n)
+
+      # zip back up to make new complete tree with deletion
+      droot = dzip(dpath)
+
+      # small 1/N chance the delete location is the target!
+      # otherwise replace the delete target with the removed entry
+      new_root = if kdel == key, do: droot, else: replace!(droot, key, vkdel)
+
+      %{heap | root: new_root, size: n - 1}
+    end
 
     # O(1)
     def peek(%MHTree{root: root}), do: do_peek(root)
@@ -224,48 +338,74 @@ defmodule Exa.Std.MinHeap.Tree do
 
     # O(logN)
 
-    def add(%MHTree{root: :empty}, k, v), do: %MHTree{root: {v, k}, size: 1}
+    def add(%MHTree{root: :empty} = heap, k, v) when is_val(v),
+      do: %{heap | root: {v, k}, size: 1}
 
-    def add(%MHTree{root: root, size: n}, k, v) do
+    def add(%MHTree{root: root, size: n} = heap, k, v) when is_val(v) do
       # note - does not raise on existing key
       m = n + 1
       new_root = root |> unzip_addr(m) |> izip({v, k})
-      %MHTree{root: new_root, size: m}
+      %{heap | root: new_root, size: m}
     end
 
     # O(N)
-
-    def update(%MHTree{root: :empty}, k, v), do: %MHTree{root: {v, k}, size: 1}
-
-    def update(%MHTree{root: root, size: n}, k, v) do
-      new_root =
-        case unzip_key(root, k) do
-          :not_found -> raise(ArgumentError, message: "Heap missing key '#{k}'")
-          {{_, ^k}, path} -> dzip(path, {v, k})
-          {{{u, ^k}, l, r}, path} when v < u -> dzip(path, {{v, k}, l, r})
-          {{{_, ^k}, l, r}, path} -> dzip(path, heapify({{v, k}, l, r}))
-        end
-
-      %MHTree{root: new_root, size: n}
+    def update(%MHTree{root: root} = heap, k, v) when is_val(v) do
+      %{heap | root: replace!(root, k, {v, k})}
     end
 
     # O(logN)
     def pop(%MHTree{root: :empty, size: 0}), do: :empty
 
-    def pop(%MHTree{root: {v, k}, size: 1}),
-      do: {{k, v}, %MHTree{}}
+    def pop(%MHTree{root: {v, k}, size: 1}), do: {{k, v}, %MHTree{}}
 
-    def pop(%MHTree{root: {{v, k}, vk, :empty}, size: 2}),
-      do: {{k, v}, %MHTree{root: vk, size: 1}}
+    def pop(%MHTree{root: {{v, k}, vk, :empty}, size: 2} = heap),
+      do: {{k, v}, %{heap | root: vk, size: 1}}
 
-    def pop(%MHTree{root: root, size: n}) do
+    def pop(%MHTree{root: root, size: n} = heap) do
       # build cursor down to delete location and isolate leaf entry
       [vkdel | dpath] = unzip_addr(root, n)
+
+      # zip back up to make new complete tree
       # size >= 3 so always a branch node after deletion
       {{vmin, kmin}, l, r} = dzip(dpath)
+
       # substitute removed entry at root and bubble value down
-      new_root = heapify({vkdel, l, r})
-      {{kmin, vmin}, %MHTree{root: new_root, size: n - 1}}
+      {mpath, sub} = unzip_min({vkdel, l, r})
+
+      # no-op zip back up again
+      new_root = zip(mpath, sub)
+
+      {{kmin, vmin}, %{heap | root: new_root, size: n - 1}}
+    end
+
+    # -------
+    # replace
+    # -------
+
+    # find a target key and replace the full entry 
+    # then bubble the new entry down/up to make the new root
+    @spec replace!(MH.vkroot(), MH.key(), MH.vktup()) :: MH.vkroot()
+    defp replace!(root, k, vknew) do
+      case unzip_key(root, k) do
+        :not_found -> raise(ArgumentError, message: "Heap missing key '#{k}'")
+        kpath -> repl(kpath, vknew)
+      end
+    end
+
+    # replace an entry at a cursor location 
+    # then bubble the new value down/up to make the new root
+    @spec repl(MHTree.cursor(), MH.vktup()) :: MH.vkroot()
+
+    # found in a leaf node - just bubble up
+    defp repl([{_, _} | path], vk), do: izip(path, vk)
+
+    # new low value maintains heap property in the subtree - just bubble up
+    defp repl([{{u, _}, l, r} | path], {v, _} = vk) when v < u, do: izip(path, {vk, l, r})
+
+    # new high value must be bubbled down into subtree
+    defp repl([{{_, _}, l, r} | path], vk) do
+      {mpath, sub} = unzipm({vk, l, r}, path)
+      izip(mpath, sub)
     end
 
     # ----------
@@ -276,17 +416,24 @@ defmodule Exa.Std.MinHeap.Tree do
     # bubble min values to the top
     @spec izip(MHTree.cursor(), MH.vknode()) :: MH.vkroot()
 
-    # insert new entry into leaf
-    defp izip([{vk1, {_, _} = l, :r} | p], vk) when vk < vk1, do: izip(p, {vk, l, vk1})
-    defp izip([{vk1, {_, _} = l, :r} | p], vk), do: izip(p, {vk1, l, vk})
-    defp izip([{_, _} = vk1 | p], vk) when vk < vk1, do: izip(p, {vk, vk1, :empty})
-    defp izip([{_, _} = vk1 | p], vk), do: izip(p, {vk1, vk, :empty})
-
     # main branch node traversal
     defp izip([{vk1, l1, :r} | p], {vk, l, r}) when vk < vk1, do: izip(p, {vk, l1, {vk1, l, r}})
     defp izip([{vk1, l1, :r} | p], {_, _, _} = r1), do: izip(p, {vk1, l1, r1})
     defp izip([{vk1, :l, r1} | p], {vk, l, r}) when vk < vk1, do: izip(p, {vk, {vk1, l, r}, r1})
     defp izip([{vk1, :l, r1} | p], {_, _, _} = l1), do: izip(p, {vk1, l1, r1})
+
+    # insert new entry into parent of leaves
+    # note {_, l, :r} may have l={_,_} or {_,_,:empty}
+    defp izip([{vk1, :l, {_, _} = r} | p], {_, _} = vk) when vk < vk1, do: izip(p, {vk, vk1, r})
+    defp izip([{vk1, :l, {_, _} = r} | p], {_, _} = vk), do: izip(p, {vk1, vk, r})
+    defp izip([{vk1, l, :r} | p], {_, _} = vk) when vk < vk1, do: izip(p, {vk, l, vk1})
+    defp izip([{vk1, l, :r} | p], {_, _} = vk), do: izip(p, {vk1, l, vk})
+
+    # insert new entry into leaf
+    defp izip([{_, _} = vk1 | p], {_, _} = vk) when vk < vk1, do: izip(p, {vk, vk1, :empty})
+    defp izip([{_, _} = vk1 | p], {_, _} = vk), do: izip(p, {vk1, vk, :empty})
+    defp izip([{vk1, :l, :empty} | p], {_, _} = vk) when vk < vk1, do: izip(p, {vk, vk1, :empty})
+    defp izip([{vk1, :l, :empty} | p], {_, _} = vk), do: izip(p, {vk1, vk, :empty})
 
     # return new root
     defp izip([], root), do: root
@@ -297,69 +444,78 @@ defmodule Exa.Std.MinHeap.Tree do
 
     # zip upwards along a cursor path after deletion
     # minimum property is implicitly preserved
-
-    # first step makes a new leaf at the delete location
+    # does not accept special case of empty or single entry root
+    # first step makes a new leaf at the delete location, then no-op zip
     @spec dzip(MHTree.cursor()) :: MH.vkroot()
-    defp dzip([{vk1, {_, _} = vk2, :r} | dpath]), do: dzip(dpath, {vk1, vk2, :empty})
-    defp dzip([{vk1, :l, :empty} | dpath]), do: dzip(dpath, vk1)
+    defp dzip([{vk1, {_, _} = vk2, :r} | dpath]), do: zip(dpath, {vk1, vk2, :empty})
+    defp dzip([{vk1, :l, {_, _} = vk2} | dpath]), do: zip(dpath, {vk1, vk2, :empty})
+    defp dzip([{vk1, :l, :empty} | dpath]), do: zip(dpath, vk1)
+
+    # --------
+    # pure zip
+    # --------
 
     # rebuild cursor over subtree
-    @spec dzip(MHTree.cursor(), MHTree.vknode()) :: MH.vkroot()
-
     # neutral no-op merge
-    defp dzip([{vk, l, :r} | p], sub), do: dzip(p, {vk, l, sub})
-    defp dzip([{vk, :l, r} | p], sub), do: dzip(p, {vk, sub, r})
+    @spec zip(MHTree.cursor(), MHTree.vknode()) :: MH.vkroot()
+    defp zip([{vk, l, :r} | p], sub), do: zip(p, {vk, l, sub})
+    defp zip([{vk, :l, r} | p], sub), do: zip(p, {vk, sub, r})
+    defp zip([], root), do: root
 
-    # return new root
-    defp dzip([], root), do: root
+    # ---------
+    # unzip min
+    # ---------
 
-    # -------
-    # heapify
-    # -------
+    # reorder tree with a new root to enforce 
+    # heap property that parent is minimum of children
+    # rebalancing occurs down a single cursor path, so it is an unzip
 
-    # reorder a tree with a new root
-    # to enforce the heap property that parent is minimum of children
-    # traverse down while bubbling low values up
+    @spec unzip_min(MHTree.vkroot()) :: {MHTree.cursor(), MHTree.vknode()}
+    defp unzip_min(root), do: unzipm(root, [])
 
-    @spec heapify(MHTree.vknode()) :: MHTree.vkroot()
+    # tail-recursive traversal down the tree
+    # while bubbling lower values up
+    # stop when target node satisfies heap property
+    # return cursor to the valid subtree at that point
+    @spec unzipm(MHTree.vknode(), MHTree.cursor()) :: {MHTree.cursor(), MHTree.vknode()}
 
     # general branch node
 
-    defp heapify({vk, {vk1, _, _}, {vk2, _, _}} = vknode) when vk < vk1 and vk < vk2,
-      do: vknode
+    defp unzipm({vk, {vk1, _, _}, {vk2, _, _}} = vknode, p) when vk < vk1 and vk < vk2,
+      do: {p, vknode}
 
-    defp heapify({vk, {vk1, l1, r1}, {vk2, _, _} = r}) when vk1 < vk and vk1 < vk2,
-      do: {vk1, heapify({vk, l1, r1}), r}
+    defp unzipm({vk, {vk1, l1, r1}, {vk2, _, _} = r}, p) when vk1 < vk and vk1 < vk2,
+      do: unzipm({vk, l1, r1}, [{vk1, :l, r} | p])
 
-    defp heapify({vk, {_, _, _} = l, {vk2, l2, r2}}),
-      do: {vk2, l, heapify({vk, l2, r2})}
+    defp unzipm({vk, {_, _, _} = l, {vk2, l2, r2}}, p),
+      do: unzipm({vk, l2, r2}, [{vk2, l, :r} | p])
 
     # full node and entry leaf
 
-    defp heapify({vk, {vk1, _, _}, {_, _} = vk2} = vknode) when vk < vk1 and vk < vk2,
-      do: vknode
+    defp unzipm({vk, {vk1, _, _}, {_, _} = vk2} = vknode, p) when vk < vk1 and vk < vk2,
+      do: {p, vknode}
 
-    defp heapify({vk, {vk1, l1, r1}, {_, _} = vk2}) when vk1 < vk and vk1 < vk2,
-      do: {vk1, heapify({vk, l1, r1}), vk2}
+    defp unzipm({vk, {vk1, l1, r1}, {_, _} = vk2}, p) when vk1 < vk and vk1 < vk2,
+      do: unzipm({vk, l1, r1}, [{vk1, :l, vk2} | p])
 
-    defp heapify({vk, {_, _, _} = l, {_, _} = vk2}),
-      do: {vk2, l, vk}
+    defp unzipm({vk, {_, _, _} = l, {_, _} = vk2}, p),
+      do: {p, {vk2, l, vk}}
 
     # two entry leaves
 
-    defp heapify({vk, {_, _} = vk1, {_, _} = vk2} = vknode) when vk < vk1 and vk < vk2,
-      do: vknode
+    defp unzipm({vk, {_, _} = vk1, {_, _} = vk2} = vknode, p) when vk < vk1 and vk < vk2,
+      do: {p, vknode}
 
-    defp heapify({vk, {_, _} = vk1, {_, _} = vk2}) when vk1 < vk and vk1 < vk2,
-      do: {vk1, vk, vk2}
+    defp unzipm({vk, {_, _} = vk1, {_, _} = vk2}, p) when vk1 < vk and vk1 < vk2,
+      do: {p, {vk1, vk, vk2}}
 
-    defp heapify({vk, {_, _} = vk1, {_, _} = vk2}),
-      do: {vk2, vk1, vk}
+    defp unzipm({vk, {_, _} = vk1, {_, _} = vk2}, p),
+      do: {p, {vk2, vk1, vk}}
 
     # single entry leaf
 
-    defp heapify({vk, {_, _} = vk1, :empty} = vknode) when vk < vk1, do: vknode
-    defp heapify({vk, {_, _} = vk1, :empty}), do: {vk1, vk, :empty}
+    defp unzipm({vk, {_, _} = vk1, :empty} = vknode, p) when vk < vk1, do: {p, vknode}
+    defp unzipm({vk, {_, _} = vk1, :empty}, p), do: {p, {vk1, vk, :empty}}
 
     # ----------------
     # unzip to address
@@ -382,19 +538,19 @@ defmodule Exa.Std.MinHeap.Tree do
 
     # traverse the whole tree to find a key
     # return the value, or error if not found
-    @spec find(MHTree.vknode(), MH.key()) :: {:ok, MH.val()} | :error
+    @spec find(MHTree.vknode(), MH.key()) :: {:ok, MH.val()} | :not_found
 
     defp find({{v, key}, _l, _r}, key), do: {:ok, v}
 
     defp find({_, l, r}, key) do
       case find(l, key) do
         {:ok, _} = ans -> ans
-        :error -> find(r, key)
+        :not_found -> find(r, key)
       end
     end
 
     defp find({v, key}, key), do: {:ok, v}
-    defp find(_, _), do: :error
+    defp find(_, _), do: :not_found
 
     # ------------
     # unzip to key
@@ -402,23 +558,23 @@ defmodule Exa.Std.MinHeap.Tree do
 
     # traverse the whole tree to find a key
     # maintain and return a path cursor
-    # and a subtree containing the target entry
-    @spec unzip_key(MHTree.vkroot(), MH.key()) :: :not_found | {MHTree.vknode(), MHTree.cursor()}
+    # with subtree containing the target entry at the head
+    @spec unzip_key(MHTree.vkroot(), MH.key()) :: :not_found | MHTree.cursor()
     defp unzip_key(root, key), do: unzipk(root, key, [])
 
-    @spec unzipk(MHTree.vknode(), MH.key(), MHTree.cursor()) ::
-            :not_found | {MHTree.vknode(), MHTree.cursor()}
+    @spec unzipk(MHTree.vknode(), MH.key(), MHTree.cursor()) :: :not_found | MHTree.cursor()
 
-    defp unzipk({{_, key}, _l, _r} = sub, key, path), do: {sub, path}
+    defp unzipk({{_, key}, _l, _r} = sub, key, path), do: [sub | path]
 
     defp unzipk({vk, l, r}, key, path) do
       case unzipk(l, key, [{vk, :l, r} | path]) do
         :not_found -> unzipk(r, key, [{vk, l, :r} | path])
-        {_, _} = ans -> ans
+        new_path -> new_path
       end
     end
 
-    defp unzipk({_, key} = sub, key, path), do: {sub, path}
+    defp unzipk({_, key} = sub, key, path), do: [sub | path]
+
     defp unzipk(_, _, _), do: :not_found
 
     # -------
@@ -434,4 +590,108 @@ defmodule Exa.Std.MinHeap.Tree do
       Exa.Binary.from_uint(position, layer)
     end
   end
+
+  # -------------
+  # validate tree
+  # -------------
+
+  defguard is_val(v) when is_number(v) or v == :inf
+
+  # verify that a tree satisfies the heap property:
+  # - every value is number or :inf 
+  # - heap property
+  #   - parent value less than children
+  # - complete binary tree
+  #   - structure of branches and leaves is correct
+  #   - leaves follow correct layer pattern
+  #
+  # raise error for failed validation
+  # otherwise, return the heap argument unchanged
+
+  @spec validate!(MHTree.t()) :: MHTree.t()
+
+  def validate!(%MHTree{root: :empty, size: 0} = heap), do: heap
+
+  def validate!(%MHTree{root: {v, _}, size: 1} = heap) when is_val(v), do: heap
+
+  def validate!(%MHTree{root: {_, _, _} = root, size: n} = heap) do
+    keys = Exa.Std.MinHeap.keys(heap)
+
+    # size is correct  
+    true = length(keys) == n
+
+    # no repeated keys 
+    true = Exa.List.unique?(keys)
+
+    # basic structure is correct
+    true = is_root(root)
+
+    # validate correct sequence of leaves and depths
+
+    # max depth (0-based layer) of leaves
+    dmax = n |> :math.log2() |> floor()
+    # number of max depth entries
+    #      n -  2  ^  dmax  + 1
+    nult = n - (1 <<< dmax) + 1
+    # number of empty leaves as padding to even 
+    # if nult is even (0) or odd (1)
+    nemp = nult &&& 0x01
+    # remaining leaves in previous layer
+    #         2 ^ (dmax - 1)  -  (nult + nemp)/2
+    npen = (1 <<< (dmax - 1)) - ((nult + nemp) >>> 1)
+
+    leaves = [] |> leaves(0, root) |> Enum.reverse()
+
+    true = length(leaves) == nult + nemp + npen
+
+    rem =
+      leaves
+      |> entries(dmax, nult)
+      |> empties(dmax, nemp)
+      |> entries(dmax - 1, npen)
+
+    true = rem == []
+
+    heap
+  end
+
+  # traverse tree enforce heap property and collect {leaf,depth} sequence
+
+  defp leaves(leaves, d, {{v, _} = vk, l, r}) when is_val(v) do
+    # min heap property
+    true = vk < val(l)
+    true = vk < val(r)
+    d = d + 1
+    leaves |> leaves(d, l) |> leaves(d, r)
+  end
+
+  defp leaves(leaves, d, {v, _} = vk) when is_val(v), do: [{vk, d} | leaves]
+  defp leaves(leaves, d, :empty), do: [{:empty, d} | leaves]
+
+  # consume leaf entries at fixed depth
+  defp entries(ls, _d, 0), do: ls
+  defp entries([{{_, _}, d} | ls], d, n), do: entries(ls, d, n - 1)
+
+  # consume empty leaf at given depth
+  defp empties(ls, _d, 0), do: ls
+  defp empties([{:empty, d} | ls], d, 1), do: ls
+
+  # root structure
+  defp is_root(:empty), do: true
+  defp is_root({_, _}), do: true
+  defp is_root({{_, _}, {_, _}, :empty}), do: true
+  defp is_root({{_, _}, {_, _}, {_, _}}), do: true
+  defp is_root(root), do: is_branch(root)
+
+  # branch structure
+  defp is_branch({{_, _}, {{_, _}, {_, _}, {_, _}}, {_, _}}), do: true
+  defp is_branch({{_, _}, {{_, _}, {_, _}, {_, _}}, {{_, _}, {_, _}, :empty}}), do: true
+  defp is_branch({{_, _}, {{_, _}, {_, _}, :empty}, {_, _}}), do: true
+  defp is_branch({{_, _}, {_, _}, {_, _}}), do: true
+  defp is_branch({{_, _}, {_, _, _} = l, {_, _, _} = r}), do: is_branch(l) and is_branch(r)
+
+  # get value of node
+  defp val({vk, _l, _r}), do: vk
+  defp val({_, _} = vk), do: vk
+  defp val(:empty), do: {:inf, :inf}
 end

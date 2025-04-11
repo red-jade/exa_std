@@ -49,6 +49,8 @@ defmodule Exa.Std.MinHeapTest do
     assert_raise ArgumentError, fn -> MinHeap.fetch!(tree, 99) end
     assert {1, 10} == MinHeap.peek(tree)
 
+    Exa.Std.MinHeap.Tree.validate!(tree)
+
     {kvmin, tree} = MinHeap.pop(tree)
     assert {1, 10} == kvmin
 
@@ -65,6 +67,28 @@ defmodule Exa.Std.MinHeapTest do
     assert {3, 67} == kvmin
 
     assert :empty == MinHeap.pop(emptree)
+  end
+
+  test "validate tree" do
+    n = 100
+    n2 = div(n, 2)
+    mod = Exa.Std.MinHeap.Tree
+    kvs = random(n, 1, 1_000)
+
+    # run an add-del-pop workflow
+    heap =
+      mod.new()
+      |> pipe(kvs, fn {k, v}, heap ->
+        heap |> MinHeap.add(k, v) |> mod.validate!()
+      end)
+      |> pipe(1..n2, fn k, heap ->
+        heap |> MinHeap.delete(k) |> mod.validate!()
+      end)
+      |> pipe(1..n2, fn _k, heap ->
+        heap |> MinHeap.pop() |> elem(1) |> mod.validate!()
+      end)
+
+    assert mod.new() == heap
   end
 
   test "simple" do
@@ -86,6 +110,7 @@ defmodule Exa.Std.MinHeapTest do
   end
 
   defp simple(mod) do
+    # 1 - decreasing; 2 - increasing
     heap =
       mod.new()
       |> MinHeap.add(1, 43)
@@ -115,6 +140,25 @@ defmodule Exa.Std.MinHeapTest do
     assert mod.new() == heap
 
     assert :empty = MinHeap.peek(heap)
+  end
+
+  test "delete" do
+    n = 100
+    kvs = random(n, 1, 1_000)
+
+    for mod <- @impls do
+      heap =
+        mod.new()
+        |> pipe(kvs, fn {k, v}, heap -> MinHeap.add(heap, k, v) end)
+        |> pipe(1..n, fn i, heap ->
+          heap = MinHeap.delete(heap, i)
+          assert n - i == MinHeap.size(heap)
+          assert not MinHeap.has_key?(heap, i)
+          heap
+        end)
+
+      assert 0 == MinHeap.size(heap)
+    end
   end
 
   test "random" do
@@ -158,26 +202,42 @@ defmodule Exa.Std.MinHeapTest do
 
   defp add_pop(mod, kvs) do
     # add all, pop all
-    heap = mod.new()
-    heap = Enum.reduce(kvs, heap, fn {k, v}, heap -> MinHeap.add(heap, k, v) end)
-    pops(heap)
+    mod.new()
+    |> pipe(kvs, fn {k, v}, heap -> MinHeap.add(heap, k, v) end)
+    |> pops()
   end
 
   # add all, update some fraction, pop some fraction
   # typically m << length(kvs)
   defp add_upd_pop(mod, kvs, m) do
-    heap = mod.new()
-    heap = Enum.reduce(kvs, heap, fn {k, v}, heap -> MinHeap.add(heap, k, v) end)
-    heap = Enum.reduce(1..m, heap, fn i, heap -> MinHeap.update(heap, i, i) end)
-    pops(heap, m)
+    mod.new()
+    |> pipe(kvs, fn {k, v}, heap -> MinHeap.add(heap, k, v) end)
+    |> pipe(1..m, fn i, heap -> MinHeap.update(heap, i, i) end)
+    |> pops(m)
   end
+
+  # add all, get some fraction, delete some fraction
+  # random access map tests - should not be critical for heap
+  # expect Tree to be much slower than Map or Ord
+  defp add_get_del(mod, kvs, m) do
+    mod.new()
+    |> pipe(kvs, fn {k, v}, heap -> MinHeap.add(heap, k, v) end)
+    |> pipe(1..m, fn i, heap ->
+      MinHeap.get(heap, i)
+      heap
+    end)
+    |> pipe(1..m, fn i, heap -> MinHeap.delete(heap, i) end)
+  end
+
+  # swap args for piping reduce
+  defp pipe(heap, enum, fun), do: Enum.reduce(enum, heap, fun)
 
   # ----------
   # benchmarks
   # ----------
 
   @tag benchmark: true
-  @tag timeout: 400_000
+  @tag timeout: 500_000
   test "random benchmarks" do
     Benchee.run(
       benchmarks(),
@@ -190,6 +250,7 @@ defmodule Exa.Std.MinHeapTest do
   defp benchmarks() do
     params =
       for mod <- @impls, n <- [1_000, 10_000] do
+        # n div 5 = 20%
         {mod, n, div(n, 5), random(n, 1, 10_000)}
       end
 
@@ -199,6 +260,9 @@ defmodule Exa.Std.MinHeapTest do
     end)
     |> add_tests(params, fn {mod, n, m, kvs}, benchs ->
       Map.put(benchs, test_name("add_upd_pop", n, mod), fn -> add_upd_pop(mod, kvs, m) end)
+    end)
+    |> add_tests(params, fn {mod, n, m, kvs}, benchs ->
+      Map.put(benchs, test_name("add_get_del", n, mod), fn -> add_get_del(mod, kvs, m) end)
     end)
   end
 
