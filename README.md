@@ -27,7 +27,7 @@ Module path: `Exa.Std`
 The Minimum Heap is expressed as a protocol,
 with three concrete implementations:
 - map and minimum-valued index
-- ordered set
+- ordered list
 - complete binary tree
 
 ## Building
