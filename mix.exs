@@ -3,7 +3,7 @@ defmodule Exa.Std.MixProject do
 
   @lib :exa_std
   @name "Exa Std"
-  @ver "0.3.3"
+  @ver "0.3.5"
 
   def project do
     [
