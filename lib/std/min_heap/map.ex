@@ -10,6 +10,8 @@ defmodule Exa.Std.MinHeap.Map do
   and `delete/2` of the minimum entry, 
   which are all `O(N)`.
   """
+  import Exa.Types
+
   defmodule MHMap do
     alias Exa.Std.MinHeap, as: MH
 
@@ -26,6 +28,29 @@ defmodule Exa.Std.MinHeap.Map do
   @doc "Create an empty heap."
   @spec new() :: MHMap.t()
   def new(), do: %MHMap{}
+
+  # O(N)
+  @doc "Create a heap from a key-value map."
+  @spec new(MH.kvmap()) :: MHMap.t()
+
+  def new(map) when is_map_empty(map),
+    do: %MHMap{}
+
+  def new(map) when is_map(map) and map_size(map) == 1,
+    do: %MHMap{kmin: map |> Enum.take(1) |> hd() |> elem(0), map: map}
+
+  def new(map) when is_map(map) do
+    %MHMap{
+      kmin:
+        map
+        |> Enum.reduce(fn
+          {_, v}, {_, vmin} = kvmin when vmin < v -> kvmin
+          kv, _kvmin -> kv
+        end)
+        |> elem(0),
+      map: map
+    }
+  end
 
   # --------
   # protocol
@@ -98,7 +123,7 @@ defmodule Exa.Std.MinHeap.Map do
 
     # O(N)
 
-    def pop(%MHMap{kmin: nil, map: %{}}),
+    def pop(%MHMap{kmin: nil, map: map}) when is_map_empty(map),
       do: :empty
 
     def pop(%MHMap{kmin: kmin, map: map}) when map_size(map) == 1,
@@ -106,18 +131,14 @@ defmodule Exa.Std.MinHeap.Map do
 
     def pop(%MHMap{kmin: kmin, map: map} = heap) do
       {vmin, new_map} = Map.pop!(map, kmin)
-      [k | ks] = Map.keys(new_map)
-      new_kmin = kmin(ks, new_map, k, new_map[k])
+
+      {new_kmin, _new_vmin} =
+        Enum.reduce(new_map, fn
+          {_, v}, {_, vmin} = kvmin when vmin < v -> kvmin
+          kv, _kvmin -> kv
+        end)
+
       {{kmin, vmin}, %{heap | :kmin => new_kmin, :map => new_map}}
     end
-
-    @spec kmin([MH.key()], MH.kvmap(), MH.key(), MH.val()) :: MH.key()
-
-    defp kmin([k | ks], map, kmin, vmin) do
-      v = map[k]
-      if v < vmin, do: kmin(ks, map, k, v), else: kmin(ks, map, kmin, vmin)
-    end
-
-    defp kmin([], _map, kmin, _vmin), do: kmin
   end
 end

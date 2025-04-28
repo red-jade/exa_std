@@ -93,20 +93,46 @@ defmodule Exa.Std.MinHeapTest do
 
   test "simple" do
     for mod <- @impls do
+      mapped(mod)
       infinite(mod)
       simple(mod)
     end
   end
 
+  defp mapped(mod) do
+    kvss = [
+      [],
+      [{1, 17}],
+      [{3, 7}, {1, 17}, {2, 99}]
+    ]
+
+    for kvs <- kvss do
+      mhmap = mod.new(Map.new(kvs))
+      mhadd = kvs 
+      |> Enum.reverse() 
+      |> Enum.reduce(mod.new(), fn {k, v}, mh -> MinHeap.add(mh, k, v) end)
+
+      assert MinHeap.peek(mhmap) == MinHeap.peek(mhadd)
+      assert MinHeap.to_map(mhmap) == MinHeap.to_map(mhadd)
+      
+      # cannot usually compare Tree heaps using '=='
+      # but we ensure kvs are added in the correct order
+      assert mhmap == mhadd
+    end
+  end
+
   defp infinite(mod) do
+    kvs = [{3, 7}, {1, 17}, {2, :inf}]
+    kvmap = Map.new(kvs)
+
     inf =
       mod.new()
       |> MinHeap.add(1, 17)
       |> MinHeap.add(2)
       |> MinHeap.add(3, 7)
-      |> pops()
 
-    assert [{3, 7}, {1, 17}, {2, :inf}] == inf
+    assert kvs == pops(inf)
+    assert kvmap == MinHeap.to_map(inf)
   end
 
   defp simple(mod) do

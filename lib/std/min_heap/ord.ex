@@ -31,6 +31,12 @@ defmodule Exa.Std.MinHeap.Ord do
   @spec new() :: MHOrd.t()
   def new(), do: %MHOrd{}
 
+  # O(NlogN)
+  @doc "Create a heap from a key-value map."
+  @spec new(MH.kvmap()) :: MHOrd.t()
+  def new(map) when is_map(map),
+    do: %MHOrd{ord: map |> Enum.map(fn {k, v} -> {v, k} end) |> Enum.sort()}
+
   # --------
   # protocol
   # --------

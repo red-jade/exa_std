@@ -12,6 +12,14 @@ defmodule Exa.Std.MinHeap.Tree do
 
   The maximum depth of the whole tree is `ceil(log₂N)` ~ `O(logN)`.
 
+  The structure of the tree depends on insertion order,
+  so trees constructed from the same values,
+  but added in a different order,
+  will not usually be strictly equal `==`.
+
+  For an equlity comparison, convert `to_map/1`
+  and compare the maps for equality.
+
   ## Complete Binary Tree
 
   A binary tree is one where branch nodes 
@@ -204,6 +212,8 @@ defmodule Exa.Std.MinHeap.Tree do
 
   alias Exa.Types, as: E
 
+  alias Exa.Std.MinHeap
+
   defmodule MHTree do
     alias Exa.Types, as: E
     alias Exa.Std.MinHeap, as: MH
@@ -253,6 +263,12 @@ defmodule Exa.Std.MinHeap.Tree do
   # O(1)
   @doc "Create an empty heap."
   def new(), do: %MHTree{}
+
+  # O(NlogN)
+  @doc "Create a heap from a key-value map."
+  @spec new(MH.kvmap()) :: MHTree.t()
+  def new(map) when is_map(map),
+    do: Enum.reduce(map, %MHTree{}, fn {k, v}, mh -> MinHeap.add(mh, k, v) end)
 
   # --------
   # protocol
@@ -388,6 +404,8 @@ defmodule Exa.Std.MinHeap.Tree do
     defp replace!(root, k, vknew) do
       case unzip_key(root, k) do
         :not_found -> raise(ArgumentError, message: "Heap missing key '#{k}'")
+        [^vknew | _] -> root
+        [{^vknew, _, _} | _] -> root
         kpath -> repl(kpath, vknew)
       end
     end
