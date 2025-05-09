@@ -25,24 +25,21 @@ defprotocol Exa.Std.MinHeap do
   # types
   # -----
 
-  # keys can be anything, but will usually be non-negative integers
+  @typedoc "Keys can be anything, but will usually be non-negative integers."
   @type key() :: any()
 
-  # note that all numbers sort less than atoms, so x < :inf
+  @typedoc "Note that all numbers sort less than atoms, so `x < :inf`."
   @type val() :: number() | :inf
-
-  # min heap is any struct that implements the protocol
-  @type minheap() :: map()
 
   # tuples and maps ----------
 
-  # regular kv tuple
+  @typedoc "Regular kv tuple."
   @type kvtup() :: {key(), val()}
 
-  # reversed vk tuple that sorts with the value
+  @typedoc "Reversed vk tuple that sorts with the value."
   @type vktup() :: {val(), key()}
 
-  # regular kv map
+  @typedoc "Regular kv map."
   @type kvmap() :: %{key() => val()}
 
   # --------
@@ -50,19 +47,19 @@ defprotocol Exa.Std.MinHeap do
   # --------
 
   @doc "Get the number of entries in the heap."
-  @spec size(minheap()) :: E.count()
+  @spec size(MinHeap.t()) :: E.count()
   def size(heap)
 
   @doc "Test if the heap has the given key."
-  @spec has_key?(minheap(), key()) :: bool()
+  @spec has_key?(MinHeap.t(), key()) :: bool()
   def has_key?(heap, k)
 
   @doc "Get the value for a key, or return default if the key does not exist."
-  @spec get(minheap(), key(), t) :: val() | t when t: var
+  @spec get(MinHeap.t(), key(), t) :: val() | t when t: var
   def get(heap, k, default \\ nil)
 
   @doc "Get the value for a key, or raise if the key does not exist."
-  @spec fetch!(minheap(), key()) :: val()
+  @spec fetch!(MinHeap.t(), key()) :: val()
   def fetch!(heap, k)
 
   @doc """
@@ -73,7 +70,7 @@ defprotocol Exa.Std.MinHeap do
   It is not an error if the key does not exist. 
   The heap is returned unchanged.
   """
-  @spec delete(minheap(), key()) :: minheap()
+  @spec delete(MinHeap.t(), key()) :: MinHeap.t()
   def delete(heap, k)
 
   @doc """
@@ -87,7 +84,7 @@ defprotocol Exa.Std.MinHeap do
   An implementation may optionally check for an existing key
   and raise an error - if the check can be done in O(1).
   """
-  @spec add(minheap(), key(), val()) :: minheap()
+  @spec add(MinHeap.t(), key(), val()) :: MinHeap.t()
   def add(heap, k, v \\ :inf)
 
   @doc """
@@ -101,7 +98,7 @@ defprotocol Exa.Std.MinHeap do
   An implementation may optionally check for a missing key
   and raise an error - if the check can be done in O(1).
   """
-  @spec update(minheap(), key(), val()) :: minheap()
+  @spec update(MinHeap.t(), key(), val()) :: MinHeap.t()
   def update(heap, k, v)
 
   @doc """
@@ -111,7 +108,7 @@ defprotocol Exa.Std.MinHeap do
 
   If the heap does not have any entries, returns `:empty`.
   """
-  @spec peek(minheap()) :: :empty | {key(), val()}
+  @spec peek(MinHeap.t()) :: :empty | {key(), val()}
   def peek(heap)
 
   @doc """
@@ -121,18 +118,18 @@ defprotocol Exa.Std.MinHeap do
 
   If the heap does not have any entries, return `:empty`.
   """
-  @spec pop(minheap()) :: :empty | {{key(), val()}, minheap()}
+  @spec pop(MinHeap.t()) :: :empty | {{key(), val()}, MinHeap.t()}
   def pop(heap)
 
   @doc "Get the list of keys in arbitrary order."
-  @spec to_list(minheap()) :: [MH.key()]
+  @spec to_list(MinHeap.t()) :: [MH.key()]
   def keys(heap)
 
   @doc "Serialize to a list in arbitrary order."
-  @spec to_list(minheap()) :: [kvtup()]
+  @spec to_list(MinHeap.t()) :: [kvtup()]
   def to_list(heap)
 
   @doc "Serialize to a map."
-  @spec to_map(minheap()) :: kvmap()
+  @spec to_map(MinHeap.t()) :: kvmap()
   def to_map(heap)
 end
